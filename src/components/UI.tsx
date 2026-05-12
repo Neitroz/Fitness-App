@@ -111,6 +111,10 @@ export function Input({ className, ...props }: React.InputHTMLAttributes<HTMLInp
         'w-full bg-black/30 border border-white/10 rounded-lg px-4 py-2.5 text-white placeholder:text-gray-600 focus:outline-none focus:border-neon/50 focus:ring-1 focus:ring-neon/20 transition-all',
         className
       )}
+      onFocus={(e) => {
+        if (props.type === 'number') e.target.select();
+        props.onFocus?.(e);
+      }}
       {...props}
     />
   );

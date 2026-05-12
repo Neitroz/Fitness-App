@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
-import { Exercise, WorkoutSession } from '../types';
+import { Exercise, WorkoutSession, BodyMetric } from '../types';
 import { Card, Button, Badge } from './UI';
-import { Activity, Dumbbell, Trophy, Plus, ChevronRight } from 'lucide-react';
+import { Activity, Dumbbell, Trophy, Plus, ChevronRight, Scale, TrendingUp, TrendingDown } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 import { format, subDays, isWithinInterval, startOfDay } from 'date-fns';
 import { fr } from 'date-fns/locale';
@@ -9,10 +9,12 @@ import { fr } from 'date-fns/locale';
 export function Dashboard({ 
   workouts, 
   exercises, 
+  bodyMetrics,
   onStartWorkout 
 }: { 
   workouts: WorkoutSession[]; 
   exercises: Exercise[];
+  bodyMetrics: BodyMetric[];
   onStartWorkout: () => void;
 }) {
   const last7Days = useMemo(() => {
@@ -33,6 +35,15 @@ export function Dashboard({
   }, [last7Days]);
 
   const lastWorkout = workouts[0];
+
+  const weightStats = useMemo(() => {
+    if (!bodyMetrics || bodyMetrics.length === 0) return null;
+    const sorted = [...bodyMetrics].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+    const latest = sorted[sorted.length - 1];
+    const previous = sorted.length > 1 ? sorted[sorted.length - 2] : null;
+    const diff = previous ? latest.weight - previous.weight : 0;
+    return { latest, diff };
+  }, [bodyMetrics]);
 
   const recentPRs = useMemo(() => {
     // Basic PR detection: max(weight * reps) for each exercise in last workout
@@ -82,37 +93,63 @@ export function Dashboard({
       </div>
 
       {/* Summary Stat Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <Card className="p-6 bg-gradient-to-br from-dark-surface to-black/40">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 md:gap-4">
+        <Card className="p-4 md:p-6 bg-gradient-to-br from-dark-surface to-black/40">
           <div className="flex justify-between items-start">
             <div>
-              <p className="text-gray-500 text-xs font-bold uppercase tracking-widest mb-1">Séances</p>
-              <h3 className="text-3xl text-white font-mono">{stats.workoutsCount}</h3>
+              <p className="text-gray-500 text-[10px] md:text-xs font-bold uppercase tracking-widest mb-1">Séances</p>
+              <h3 className="text-2xl md:text-3xl text-white font-mono">{stats.workoutsCount}</h3>
             </div>
-            <div className="bg-neon/10 p-2 rounded-lg">
-              <Activity className="w-5 h-5 text-neon" />
+            <div className="bg-neon/10 p-1.5 md:p-2 rounded-lg">
+              <Activity className="w-4 h-4 md:w-5 md:h-5 text-neon" />
             </div>
           </div>
         </Card>
-        <Card className="p-6 bg-gradient-to-br from-dark-surface to-black/40">
+        <Card className="p-4 md:p-6 bg-gradient-to-br from-dark-surface to-black/40">
           <div className="flex justify-between items-start">
             <div>
-              <p className="text-gray-500 text-xs font-bold uppercase tracking-widest mb-1">Exercices</p>
-              <h3 className="text-3xl text-white font-mono">{stats.exercisesCount}</h3>
+              <p className="text-gray-500 text-[10px] md:text-xs font-bold uppercase tracking-widest mb-1">Poids</p>
+              <h3 className="text-2xl md:text-3xl text-neon font-mono">
+                {weightStats ? `${weightStats.latest.weight}` : '--'} 
+                <span className="text-[10px] md:text-xs text-gray-600 ml-0.5">KG</span>
+              </h3>
+              {weightStats && weightStats.diff !== 0 && (
+                <div className="flex items-center gap-0.5 mt-0.5">
+                  {weightStats.diff > 0 ? (
+                    <TrendingUp className="w-2.5 h-2.5 text-red-500" />
+                  ) : (
+                    <TrendingDown className="w-2.5 h-2.5 text-green-500" />
+                  )}
+                  <span className={`text-[9px] font-bold ${weightStats.diff > 0 ? 'text-red-400' : 'text-green-400'}`}>
+                    {weightStats.diff > 0 ? '+' : ''}{weightStats.diff.toFixed(1)}
+                  </span>
+                </div>
+              )}
             </div>
-            <div className="bg-sport-orange/10 p-2 rounded-lg">
-              <Dumbbell className="w-5 h-5 text-sport-orange" />
+            <div className="bg-neon/10 p-1.5 md:p-2 rounded-lg">
+              <Scale className="w-4 h-4 md:w-5 md:h-5 text-neon" />
             </div>
           </div>
         </Card>
-        <Card className="p-6 bg-gradient-to-br from-dark-surface to-black/40">
+        <Card className="p-4 md:p-6 bg-gradient-to-br from-dark-surface to-black/40">
           <div className="flex justify-between items-start">
             <div>
-              <p className="text-gray-500 text-xs font-bold uppercase tracking-widest mb-1">Séries</p>
-              <h3 className="text-3xl text-white font-mono">{stats.setsCount}</h3>
+              <p className="text-gray-500 text-[10px] md:text-xs font-bold uppercase tracking-widest mb-1">Exercices</p>
+              <h3 className="text-2xl md:text-3xl text-white font-mono">{stats.exercisesCount}</h3>
             </div>
-            <div className="bg-blue-500/10 p-2 rounded-lg">
-              <Trophy className="w-5 h-5 text-blue-500" />
+            <div className="bg-sport-orange/10 p-1.5 md:p-2 rounded-lg">
+              <Dumbbell className="w-4 h-4 md:w-5 md:h-5 text-sport-orange" />
+            </div>
+          </div>
+        </Card>
+        <Card className="p-4 md:p-6 bg-gradient-to-br from-dark-surface to-black/40">
+          <div className="flex justify-between items-start">
+            <div>
+              <p className="text-gray-500 text-[10px] md:text-xs font-bold uppercase tracking-widest mb-1">Séries</p>
+              <h3 className="text-2xl md:text-3xl text-white font-mono">{stats.setsCount}</h3>
+            </div>
+            <div className="bg-blue-500/10 p-1.5 md:p-2 rounded-lg">
+              <Trophy className="w-4 h-4 md:w-5 md:h-5 text-blue-500" />
             </div>
           </div>
         </Card>

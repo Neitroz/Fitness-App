@@ -74,6 +74,7 @@ export default function App() {
           <Dashboard 
             workouts={store.workouts} 
             exercises={store.exercises} 
+            bodyMetrics={store.bodyMetrics}
             onStartWorkout={() => setCurrentView('workouts')} 
           />
         );

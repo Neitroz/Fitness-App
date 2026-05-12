@@ -107,7 +107,7 @@ export function Profile({
                 <Input 
                   type="number" 
                   step="0.1"
-                  placeholder="75.5"
+                  placeholder="0.0"
                   value={weight} 
                   onChange={(e) => setWeight(e.target.value)}
                   className="font-mono"
@@ -118,7 +118,7 @@ export function Profile({
                 <label className="text-[10px] text-gray-500 font-bold uppercase tracking-widest pl-1">Taille (cm)</label>
                 <Input 
                   type="number" 
-                  placeholder="180"
+                  placeholder="0"
                   value={height} 
                   onChange={(e) => setHeight(e.target.value)}
                   className="font-mono"
@@ -130,7 +130,7 @@ export function Profile({
               <Input 
                 type="number" 
                 step="0.1"
-                placeholder="15.2"
+                placeholder="0.0"
                 value={bodyFat} 
                 onChange={(e) => setBodyFat(e.target.value)}
                 className="font-mono"

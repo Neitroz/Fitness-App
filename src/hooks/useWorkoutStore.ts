@@ -49,6 +49,16 @@ export function useWorkoutStore() {
 
     if (storedBodyMetrics) {
       setBodyMetrics(JSON.parse(storedBodyMetrics));
+    } else {
+      // Default initial metric
+      const initialMetric = {
+        id: 'initial-metric',
+        date: new Date().toISOString().split('T')[0],
+        weight: 75,
+        height: 180,
+        bodyFat: 15
+      };
+      setBodyMetrics([initialMetric]);
     }
 
     if (storedVolumeTargets) {

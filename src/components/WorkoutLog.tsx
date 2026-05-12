@@ -271,7 +271,9 @@ export function WorkoutLog({
                                 <div className="flex items-center gap-1">
                                   <input 
                                     type="number" 
-                                    value={set.weight} 
+                                    placeholder="0"
+                                    value={set.weight === 0 ? '' : set.weight} 
+                                    onFocus={(e) => e.target.select()}
                                     onChange={(e) => updateSet(entry.id, set.id, { weight: parseFloat(e.target.value) || 0 })}
                                     className="w-16 bg-black/40 border border-white/5 rounded px-2 py-1 text-sm text-center font-mono"
                                   />
@@ -281,7 +283,9 @@ export function WorkoutLog({
                               <td className="px-4 py-3">
                                 <input 
                                   type="number" 
-                                  value={set.reps} 
+                                  placeholder="0"
+                                  value={set.reps === 0 ? '' : set.reps} 
+                                  onFocus={(e) => e.target.select()}
                                   onChange={(e) => updateSet(entry.id, set.id, { reps: parseInt(e.target.value) || 0 })}
                                   className="w-12 bg-black/40 border border-white/5 rounded px-2 py-1 text-sm text-center font-mono"
                                 />
