@@ -1,0 +1,437 @@
+import React, { useState, useMemo } from 'react';
+import { WorkoutSession, Exercise, Side, Set, WorkoutEntry } from '../types';
+import { Card, Button, Input, Modal, Badge, cn } from './UI';
+import { 
+  Calendar, 
+  Trash2, 
+  Plus, 
+  Dumbbell,
+  MoreHorizontal, 
+  ChevronRight, 
+  Clock, 
+  Database,
+  ArrowBigUpDash,
+  Save,
+  X,
+  Copy
+} from 'lucide-react';
+import { format } from 'date-fns';
+import { fr } from 'date-fns/locale';
+import { v4 as uuidv4 } from 'uuid';
+
+export function WorkoutLog({ 
+  workouts, 
+  exercises, 
+  onAddWorkout, 
+  onUpdateWorkout, 
+  onDeleteWorkout,
+  currentWorkout,
+  setCurrentWorkout
+}: { 
+  workouts: WorkoutSession[]; 
+  exercises: Exercise[];
+  onAddWorkout: (w: WorkoutSession) => void;
+  onUpdateWorkout: (w: WorkoutSession) => void;
+  onDeleteWorkout: (id: string) => void;
+  currentWorkout: WorkoutSession | null;
+  setCurrentWorkout: (w: WorkoutSession | null) => void;
+}) {
+  const [isAddingEjercicio, setIsAddingEjercicio] = useState(false);
+  const [searchEx, setSearchEx] = useState('');
+
+  const filteredExercises = useMemo(() => {
+    return exercises.filter(ex => ex.name.toLowerCase().includes(searchEx.toLowerCase()));
+  }, [exercises, searchEx]);
+
+  const handleStartNewWorkout = () => {
+    setCurrentWorkout({
+      id: uuidv4(),
+      date: new Date().toISOString(),
+      name: `Séance du ${format(new Date(), 'dd/MM/yy')}`,
+      notes: '',
+      entries: []
+    });
+  };
+
+  const handleCopyWorkout = (oldW: WorkoutSession) => {
+    setCurrentWorkout({
+      ...oldW,
+      id: uuidv4(),
+      date: new Date().toISOString(),
+      name: `${oldW.name} (Copie)`,
+      entries: oldW.entries.map(e => ({
+        ...e,
+        id: uuidv4(),
+        sets: e.sets.map(s => ({ ...s, id: uuidv4() }))
+      }))
+    });
+  };
+
+  const addExerciseToWorkout = (ex: Exercise) => {
+    if (!currentWorkout) return;
+    
+    // Check if last set exists for this exercise to pre-fill
+    // (Ideally we would look through historical data, but let's keep it simple for now within the same session or empty)
+    
+    const newEntry: WorkoutEntry = {
+      id: uuidv4(),
+      exerciseId: ex.id,
+      sets: [
+        { 
+          id: uuidv4(), 
+          setNumber: 1, 
+          weight: 0, 
+          unit: 'kg', 
+          reps: 10, 
+          rir: null, 
+          side: 'both' 
+        }
+      ]
+    };
+
+    setCurrentWorkout({
+      ...currentWorkout,
+      entries: [...currentWorkout.entries, newEntry]
+    });
+    setIsAddingEjercicio(false);
+  };
+
+  const updateSet = (entryId: string, setId: string, updates: Partial<Set>) => {
+    if (!currentWorkout) return;
+    setCurrentWorkout({
+      ...currentWorkout,
+      entries: currentWorkout.entries.map(e => {
+        if (e.id !== entryId) return e;
+        return {
+          ...e,
+          sets: e.sets.map(s => s.id === setId ? { ...s, ...updates } : s)
+        };
+      })
+    });
+  };
+
+  const addSet = (entryId: string) => {
+    if (!currentWorkout) return;
+    setCurrentWorkout({
+      ...currentWorkout,
+      entries: currentWorkout.entries.map(e => {
+        if (e.id !== entryId) return e;
+        const lastSet = e.sets[e.sets.length - 1];
+        return {
+          ...e,
+          sets: [...e.sets, {
+            id: uuidv4(),
+            setNumber: e.sets.length + 1,
+            weight: lastSet?.weight || 0,
+            unit: lastSet?.unit || 'kg',
+            reps: lastSet?.reps || 10,
+            rir: lastSet?.rir || null,
+            side: lastSet?.side || 'both'
+          }]
+        };
+      })
+    });
+  };
+
+  const removeSet = (entryId: string, setId: string) => {
+    if (!currentWorkout) return;
+    setCurrentWorkout({
+      ...currentWorkout,
+      entries: currentWorkout.entries.map(e => {
+        if (e.id !== entryId) return e;
+        return {
+          ...e,
+          sets: e.sets.filter(s => s.id !== setId).map((s, i) => ({ ...s, setNumber: i + 1 }))
+        };
+      })
+    });
+  };
+
+  const removeEntry = (entryId: string) => {
+    if (!currentWorkout) return;
+    setCurrentWorkout({
+      ...currentWorkout,
+      entries: currentWorkout.entries.filter(e => e.id !== entryId)
+    });
+  };
+
+  const saveWorkout = () => {
+    if (!currentWorkout) return;
+    const isExisting = workouts.find(w => w.id === currentWorkout.id);
+    if (isExisting) {
+      onUpdateWorkout(currentWorkout);
+    } else {
+      onAddWorkout(currentWorkout);
+    }
+    setCurrentWorkout(null);
+  };
+
+  if (currentWorkout) {
+    return (
+      <div className="space-y-6 animate-in slide-in-from-bottom-5 duration-500 pb-20">
+        <div className="flex justify-between items-center bg-black/40 p-4 -mx-4 md:mx-0 md:rounded-xl border-y md:border border-white/10 sticky top-0 z-20 backdrop-blur-md">
+          <div className="flex items-center gap-3">
+            <button onClick={() => setCurrentWorkout(null)} className="text-gray-400 hover:text-white transition-colors">
+              <X className="w-6 h-6" />
+            </button>
+            <h2 className="text-xl text-white font-display">Modifier Séance</h2>
+          </div>
+          <Button variant="neon" size="sm" className="gap-2" onClick={saveWorkout}>
+            <Save className="w-4 h-4" /> Sauvegarder
+          </Button>
+        </div>
+
+        <div className="space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-1">
+              <label className="text-xs font-bold text-gray-500 uppercase tracking-widest pl-1">Nom de séance</label>
+              <Input 
+                value={currentWorkout.name} 
+                onChange={(e) => setCurrentWorkout({ ...currentWorkout, name: e.target.value })} 
+              />
+            </div>
+            <div className="space-y-1">
+              <label className="text-xs font-bold text-gray-500 uppercase tracking-widest pl-1">Date</label>
+              <Input 
+                type="date"
+                value={format(new Date(currentWorkout.date), 'yyyy-MM-dd')}
+                onChange={(e) => setCurrentWorkout({ ...currentWorkout, date: new Date(e.target.value).toISOString() })} 
+              />
+            </div>
+          </div>
+
+          <div className="space-y-4">
+            {currentWorkout.entries.map((entry) => {
+              const exercise = exercises.find(ex => ex.id === entry.exerciseId);
+              
+              // Find previous performance for this exercise
+              const previousWorkout = workouts.find(w => 
+                w.id !== currentWorkout.id && 
+                new Date(w.date) < new Date(currentWorkout.date) &&
+                w.entries.some(e => e.exerciseId === entry.exerciseId)
+              );
+              const previousEntry = previousWorkout?.entries.find(e => e.exerciseId === entry.exerciseId);
+              const lastSet = previousEntry?.sets[0];
+
+              return (
+                <Card key={entry.id} className="border-l-4 border-l-sport-orange">
+                  <div className="p-4 flex flex-col gap-3">
+                    <div className="flex justify-between items-start">
+                      <div className="flex items-center gap-2">
+                        <Dumbbell className="w-5 h-5 text-sport-orange" />
+                        <div>
+                          <h4 className="text-lg text-white font-display uppercase leading-none">{exercise?.name}</h4>
+                          <div className="flex gap-1 mt-1">
+                            {(exercise?.muscleGroups || []).map(mg => (
+                              <span key={mg} className="text-[8px] text-gray-500 uppercase font-bold">{mg}</span>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                      <button onClick={() => removeEntry(entry.id)} className="text-gray-600 hover:text-red-500 transition-colors">
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+
+                    {lastSet && (
+                      <div className="bg-white/5 border border-white/5 rounded-lg p-2 flex items-center gap-3">
+                        <span className="text-[9px] text-gray-600 font-bold uppercase tracking-widest">Dernière fois:</span>
+                        <span className="text-xs font-mono text-neon">{lastSet.weight}kg × {lastSet.reps}</span>
+                      </div>
+                    )}
+
+                    <div className="overflow-x-auto -mx-4 sm:mx-0">
+                      <table className="w-full text-left">
+                        <thead>
+                          <tr className="text-[10px] text-gray-500 font-bold uppercase tracking-widest border-b border-white/5">
+                            <th className="px-4 py-2 w-12 text-center">N°</th>
+                            <th className="px-4 py-2 min-w-[80px]">Poids</th>
+                            <th className="px-4 py-2 min-w-[80px]">Reps</th>
+                            <th className="px-4 py-2 min-w-[100px]">RIR</th>
+                            {exercise?.isUnilateral && <th className="px-4 py-2">Côté</th>}
+                            <th className="px-4 py-2 w-10"></th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-white/5">
+                          {entry.sets.map((set) => (
+                            <tr key={set.id}>
+                              <td className="px-4 py-3 text-center">
+                                <span className="w-6 h-6 inline-flex items-center justify-center rounded-full bg-white/5 text-[10px] font-bold text-gray-400">
+                                  {set.setNumber}
+                                </span>
+                              </td>
+                              <td className="px-4 py-3">
+                                <div className="flex items-center gap-1">
+                                  <input 
+                                    type="number" 
+                                    value={set.weight} 
+                                    onChange={(e) => updateSet(entry.id, set.id, { weight: parseFloat(e.target.value) || 0 })}
+                                    className="w-16 bg-black/40 border border-white/5 rounded px-2 py-1 text-sm text-center font-mono"
+                                  />
+                                  <span className="text-[10px] text-gray-500 uppercase">kg</span>
+                                </div>
+                              </td>
+                              <td className="px-4 py-3">
+                                <input 
+                                  type="number" 
+                                  value={set.reps} 
+                                  onChange={(e) => updateSet(entry.id, set.id, { reps: parseInt(e.target.value) || 0 })}
+                                  className="w-12 bg-black/40 border border-white/5 rounded px-2 py-1 text-sm text-center font-mono"
+                                />
+                              </td>
+                              <td className="px-4 py-3">
+                                <div className="flex gap-1">
+                                  {[0, 1, 2, 3].map(v => (
+                                    <button
+                                      key={v}
+                                      onClick={() => updateSet(entry.id, set.id, { rir: v === set.rir ? null : v })}
+                                      className={cn(
+                                        "w-6 h-6 flex items-center justify-center rounded-md text-[10px] font-bold transition-all",
+                                        v === set.rir 
+                                          ? (v === 0 ? "bg-red-500 text-white" : "bg-neon text-black") 
+                                          : "bg-white/5 text-gray-500 hover:bg-white/10"
+                                      )}
+                                    >
+                                      {v}
+                                    </button>
+                                  ))}
+                                </div>
+                              </td>
+                              {exercise?.isUnilateral && (
+                                <td className="px-4 py-3">
+                                  <select 
+                                    value={set.side}
+                                    onChange={(e) => updateSet(entry.id, set.id, { side: e.target.value as Side })}
+                                    className="bg-black/40 border border-white/5 rounded px-1 py-1 text-[10px] text-gray-400 focus:outline-none"
+                                  >
+                                    <option value="both">Les deux</option>
+                                    <option value="left">Gauche</option>
+                                    <option value="right">Droite</option>
+                                  </select>
+                                </td>
+                              )}
+                              <td className="px-4 py-3">
+                                <button onClick={() => removeSet(entry.id, set.id)} className="text-gray-600 hover:text-red-500 transition-colors">
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                </button>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                    <Button variant="outline" size="sm" className="w-full border-dashed" onClick={() => addSet(entry.id)}>
+                      <Plus className="w-4 h-4 mr-2" /> Ajouter une série
+                    </Button>
+                  </div>
+                </Card>
+              );
+            })}
+          </div>
+
+          <Button variant="secondary" className="w-full border-dashed text-neon hover:border-neon/50" onClick={() => setIsAddingEjercicio(true)}>
+            <Plus className="w-5 h-5 mr-2" /> Ajouter un exercice
+          </Button>
+
+          <div className="space-y-1 pt-4">
+            <label className="text-xs font-bold text-gray-500 uppercase tracking-widest pl-1">Notes de séance</label>
+            <textarea 
+              value={currentWorkout.notes} 
+              onChange={(e) => setCurrentWorkout({ ...currentWorkout, notes: e.target.value })} 
+              className="w-full bg-black/30 border border-white/10 rounded-xl px-4 py-3 text-white placeholder:text-gray-600 focus:outline-none focus:border-neon/50 transition-all font-sans min-h-[100px]"
+              placeholder="Comment s'est passée la séance ?"
+            />
+          </div>
+        </div>
+
+        <Modal isOpen={isAddingEjercicio} onClose={() => setIsAddingEjercicio(false)} title="Sélectionner un exercice">
+          <div className="space-y-4">
+            <Input 
+              placeholder="Rechercher..." 
+              value={searchEx} 
+              onChange={(e) => setSearchEx(e.target.value)} 
+              autoFocus
+            />
+            <div className="space-y-2 max-h-[400px] overflow-y-auto pr-2">
+              {filteredExercises.map(ex => (
+                <button 
+                  key={ex.id} 
+                  onClick={() => addExerciseToWorkout(ex)}
+                  className="w-full p-4 flex items-center justify-between bg-black/20 hover:bg-neon/10 rounded-xl border border-white/5 transition-all text-left group"
+                >
+                  <span className="text-white group-hover:text-neon transition-colors font-display text-lg uppercase">{ex.name}</span>
+                  <Badge variant="gray">{ex.muscleGroup}</Badge>
+                </button>
+              ))}
+              {filteredExercises.length === 0 && (
+                <p className="text-center text-gray-500 py-4 italic">Aucun exercice trouvé.</p>
+              )}
+            </div>
+          </div>
+        </Modal>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6 animate-in fade-in duration-500">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <h1 className="text-4xl text-white bebas tracking-wider">Séances</h1>
+        <Button variant="neon" className="gap-2" onClick={handleStartNewWorkout}>
+          <Plus className="w-5 h-5" />
+          Nouvelle Séance
+        </Button>
+      </div>
+
+      <div className="space-y-4">
+        {workouts.map(w => {
+          const volume = w.entries.reduce((acc, e) => {
+            return acc + e.sets.reduce((acc2, s) => acc2 + (s.weight * s.reps * (s.side === 'both' ? 2 : 1)), 0);
+          }, 0);
+
+          return (
+            <Card key={w.id} className="group hover:border-neon/20 transition-all">
+              <div className="p-4 md:p-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2">
+                    <Calendar className="w-4 h-4 text-sport-orange" />
+                    <span className="text-xs text-gray-500 font-bold uppercase tracking-widest">
+                      {format(new Date(w.date), 'EEEE dd MMMM yyyy', { locale: fr })}
+                    </span>
+                  </div>
+                  <h3 className="text-2xl text-white font-display uppercase group-hover:text-neon transition-colors">{w.name}</h3>
+                  <div className="flex flex-wrap gap-2 pt-1">
+                    <Badge variant="gray">{w.entries.length} Exercices</Badge>
+                    <Badge variant="gray">{volume.toLocaleString()}kg Volume</Badge>
+                  </div>
+                </div>
+                
+                <div className="flex items-center gap-2">
+                  <Button variant="secondary" size="sm" className="gap-2" onClick={() => handleCopyWorkout(w)}>
+                    <Copy className="w-4 h-4" /> Copier
+                  </Button>
+                  <Button variant="outline" size="sm" onClick={() => setCurrentWorkout(w)}>
+                    Modifier
+                  </Button>
+                  <button 
+                    onClick={() => { if(confirm('Supprimer cette séance ?')) onDeleteWorkout(w.id); }}
+                    className="p-2 text-gray-700 hover:text-red-500 transition-colors"
+                  >
+                    <Trash2 className="w-5 h-5" />
+                  </button>
+                </div>
+              </div>
+            </Card>
+          );
+        })}
+        {workouts.length === 0 && (
+          <div className="text-center py-20 bg-dark-surface rounded-2xl border border-dashed border-white/10">
+            <Clock className="w-12 h-12 text-gray-700 mx-auto mb-4" />
+            <p className="text-gray-500 italic">Historique vide. Commencez une séance !</p>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+

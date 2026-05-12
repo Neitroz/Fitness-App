@@ -1,0 +1,37 @@
+@import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Bebas+Neue&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Barlow Condensed", sans-serif;
+  --font-title: "Bebas Neue", sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
+
+  --color-neon: #e8ff47;
+  --color-sport-orange: #ff6b35;
+  --color-dark-surface: #12121a;
+  --color-dark-bg: #0a0a0f;
+}
+
+body {
+  @apply bg-dark-bg text-gray-100 font-sans;
+}
+
+h1, h2, h3, h4 {
+  @apply font-display tracking-tight uppercase;
+}
+
+.bebas {
+  @apply font-title;
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+}
+::-webkit-scrollbar-track {
+  @apply bg-dark-bg;
+}
+::-webkit-scrollbar-thumb {
+  @apply bg-gray-800 rounded-full hover:bg-gray-700 transition-colors;
+}
