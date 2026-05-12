@@ -24,6 +24,7 @@ import {
   Download, 
   Upload, 
   ShieldCheck,
+  Trash2,
   Menu,
   X
 } from 'lucide-react';
@@ -118,19 +119,19 @@ export default function App() {
               </div>
 
               <div className="space-y-4 border-t border-white/5 pt-8">
-                <h3 className="text-lg text-white uppercase tracking-tight">Sauvegarde & Import</h3>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <h3 className="text-lg text-white uppercase tracking-tight">Sauvegarde & Restauration</h3>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                   <div className="space-y-2">
-                    <p className="text-xs text-gray-500 uppercase font-bold tracking-widest pl-1">Exporter mes données</p>
+                    <p className="text-xs text-gray-500 uppercase font-bold tracking-widest pl-1">Exporter</p>
                     <Button variant="outline" className="w-full gap-2" onClick={store.exportData}>
                       <Download className="w-4 h-4" /> Sauvegarder .JSON
                     </Button>
                   </div>
                   <div className="space-y-2">
-                    <p className="text-xs text-gray-500 uppercase font-bold tracking-widest pl-1">Importer un backup</p>
+                    <p className="text-xs text-gray-500 uppercase font-bold tracking-widest pl-1">Restaurer</p>
                     <label className="block">
-                      <div className="w-full h-11 flex items-center justify-center gap-2 rounded-lg border border-white/10 bg-transparent text-gray-300 text-sm hover:border-neon hover:text-neon transition-all bg-white/5 cursor-pointer">
-                        <Upload className="w-4 h-4" /> Choisir fichier
+                      <div className="w-full h-11 flex items-center justify-center gap-2 rounded-lg border border-white/10 bg-white/5 text-gray-300 text-sm hover:border-neon hover:text-neon transition-all cursor-pointer">
+                        <Upload className="w-4 h-4" /> Importer .JSON
                       </div>
                       <input 
                         type="file" 
@@ -143,14 +144,21 @@ export default function App() {
                             reader.onload = (event) => {
                               const result = event.target?.result;
                               if (typeof result === 'string') {
-                                if (store.importData(result)) alert('Import réussi !');
+                                if (store.importData(result)) alert('Données restaurées !');
                               }
                             };
                             reader.readAsText(file);
+                            e.target.value = '';
                           }
                         }}
                       />
                     </label>
+                  </div>
+                  <div className="space-y-2">
+                    <p className="text-xs text-gray-500 uppercase font-bold tracking-widest pl-1">Danger Zone</p>
+                    <Button variant="danger" className="w-full gap-2" onClick={store.resetData}>
+                      <Trash2 className="w-4 h-4" /> Tout Effacer
+                    </Button>
                   </div>
                 </div>
               </div>

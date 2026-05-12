@@ -41,6 +41,7 @@ export function Analytics({
     if (!selectedExId) return [];
     
     const cutoff = subDays(new Date(), period);
+    const ex = exercises.find(e => e.id === selectedExId);
     
     return workouts
       .filter(w => isAfter(new Date(w.date), cutoff))
@@ -52,17 +53,23 @@ export function Analytics({
         const totalVolume = entry.sets.reduce((acc, s) => acc + (s.weight * s.reps * (s.side === 'both' ? 2 : 1)), 0);
         const avgRir = entry.sets.filter(s => s.rir !== null).reduce((acc, s) => acc + (s.rir || 0), 0) / entry.sets.filter(s => s.rir !== null).length;
 
+        // For unilateral, find max weight per side (including 'both')
+        const weightLeft = Math.max(...entry.sets.filter(s => s.side === 'left' || s.side === 'both').map(s => s.weight), 0);
+        const weightRight = Math.max(...entry.sets.filter(s => s.side === 'right' || s.side === 'both').map(s => s.weight), 0);
+
         return {
           date: format(new Date(w.date), 'dd/MM'),
           fullDate: w.date,
           weight: maxWeight,
+          weightLeft: weightLeft || null,
+          weightRight: weightRight || null,
           volume: totalVolume,
           rir: isNaN(avgRir) ? null : Number(avgRir.toFixed(1))
         };
       })
       .filter(Boolean)
       .sort((a, b) => new Date(a!.fullDate).getTime() - new Date(b!.fullDate).getTime());
-  }, [selectedExId, workouts, period]);
+  }, [selectedExId, workouts, period, exercises]);
 
   const muscleDistribution = useMemo(() => {
     const counts: Record<string, number> = {};
@@ -94,16 +101,28 @@ export function Analytics({
       });
     });
 
-    const MUSCLE_GROUPS_LIST = [
-      "Pectoraux", "Dos", "Épaules", "Biceps", "Triceps", 
-      "Quadriceps", "Ischios", "Fessiers", "Mollets", 
-      "Abdominaux", "Lombaires", "Autre"
-    ];
+    const MUSCLE_GROUPS_LIST = Array.from(new Set([
+      "Pectoraux", 
+      "Lats", 
+      "Trapèzes",
+      "Épaules (Antérieur)", 
+      "Épaules (Latéral)", 
+      "Épaules (Postérieur)",
+      "Biceps", 
+      "Triceps", 
+      "Quadriceps", 
+      "Ischios", 
+      "Fessiers", 
+      "Mollets", 
+      "Abdominaux", 
+      "Lombaires",
+      ...Object.keys(counts)
+    ]));
 
     return MUSCLE_GROUPS_LIST.map(mg => ({
       name: mg,
       sets: counts[mg] || 0,
-    })).filter(m => m.sets > 0 || ["Pectoraux", "Dos", "Quadriceps", "Épaules"].includes(m.name))
+    })).filter(m => m.sets > 0 || ["Pectoraux", "Lats", "Quadriceps", "Épaules (Latéral)", "Épaules (Antérieur)", "Épaules (Postérieur)"].includes(m.name))
        .sort((a, b) => b.sets - a.sets);
   }, [workouts, exercises]);
 
@@ -249,14 +268,38 @@ export function Analytics({
                       contentStyle={{ backgroundColor: '#12121a', border: '1px solid #2d2d3d', borderRadius: '8px' }}
                       itemStyle={{ color: '#e8ff47' }}
                     />
+                    <Legend />
                     <Line 
                       type="monotone" 
                       dataKey="weight" 
+                      name="Max"
                       stroke="#e8ff47" 
                       strokeWidth={3} 
                       dot={{ fill: '#e8ff47', strokeWidth: 2, r: 4 }} 
                       activeDot={{ r: 6, stroke: '#0a0a0f', strokeWidth: 2 }}
                     />
+                    {exercises.find(e => e.id === selectedExId)?.isUnilateral && (
+                      <>
+                        <Line 
+                          type="monotone" 
+                          dataKey="weightLeft" 
+                          name="Gauche"
+                          stroke="#ff6b35" 
+                          strokeWidth={2} 
+                          strokeDasharray="5 5"
+                          dot={{ fill: '#ff6b35', r: 3 }}
+                        />
+                        <Line 
+                          type="monotone" 
+                          dataKey="weightRight" 
+                          name="Droite"
+                          stroke="#00d2ff" 
+                          strokeWidth={2} 
+                          strokeDasharray="5 5"
+                          dot={{ fill: '#00d2ff', r: 3 }}
+                        />
+                      </>
+                    )}
                   </LineChart>
                 </ResponsiveContainer>
               </div>

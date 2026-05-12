@@ -211,7 +211,10 @@ export function WorkoutLog({
                 w.entries.some(e => e.exerciseId === entry.exerciseId)
               );
               const previousEntry = previousWorkout?.entries.find(e => e.exerciseId === entry.exerciseId);
-              const lastSet = previousEntry?.sets[0];
+              
+              const lastSetLeft = exercise?.isUnilateral ? previousEntry?.sets.find(s => s.side === 'left') : null;
+              const lastSetRight = exercise?.isUnilateral ? previousEntry?.sets.find(s => s.side === 'right') : null;
+              const lastSetBoth = !exercise?.isUnilateral ? previousEntry?.sets[0] : null;
 
               return (
                 <Card key={entry.id} className="border-l-4 border-l-sport-orange">
@@ -233,10 +236,14 @@ export function WorkoutLog({
                       </button>
                     </div>
 
-                    {lastSet && (
-                      <div className="bg-white/5 border border-white/5 rounded-lg p-2 flex items-center gap-3">
+                    {(lastSetBoth || lastSetLeft || lastSetRight) && (
+                      <div className="bg-white/5 border border-white/5 rounded-lg p-2 flex flex-col gap-1">
                         <span className="text-[9px] text-gray-600 font-bold uppercase tracking-widest">Dernière fois:</span>
-                        <span className="text-xs font-mono text-neon">{lastSet.weight}kg × {lastSet.reps}</span>
+                        <div className="flex gap-4">
+                          {lastSetBoth && <span className="text-xs font-mono text-neon">{lastSetBoth.weight}kg × {lastSetBoth.reps}</span>}
+                          {lastSetLeft && <span className="text-xs font-mono text-sport-orange">G: {lastSetLeft.weight}kg × {lastSetLeft.reps}</span>}
+                          {lastSetRight && <span className="text-xs font-mono text-blue-400">D: {lastSetRight.weight}kg × {lastSetRight.reps}</span>}
+                        </div>
                       </div>
                     )}
 
@@ -360,7 +367,11 @@ export function WorkoutLog({
                   className="w-full p-4 flex items-center justify-between bg-black/20 hover:bg-neon/10 rounded-xl border border-white/5 transition-all text-left group"
                 >
                   <span className="text-white group-hover:text-neon transition-colors font-display text-lg uppercase">{ex.name}</span>
-                  <Badge variant="gray">{ex.muscleGroup}</Badge>
+                  <div className="flex flex-wrap gap-1 justify-end">
+                    {(ex.muscleGroups || []).slice(0, 2).map(mg => (
+                      <Badge key={mg} variant="gray" className="text-[8px]">{mg}</Badge>
+                    ))}
+                  </div>
                 </button>
               ))}
               {filteredExercises.length === 0 && (

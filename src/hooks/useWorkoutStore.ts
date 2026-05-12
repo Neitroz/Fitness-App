@@ -8,30 +8,31 @@ export function useWorkoutStore() {
   const [unit, setUnit] = useState<'kg' | 'lbs'>('kg');
   const [isLoaded, setIsLoaded] = useState(false);
 
+  const migrateExercises = (rawExercises: any[]) => {
+    return rawExercises.map((ex: any) => {
+      if (!ex.muscleGroups && ex.muscleGroup) {
+        return {
+          ...ex,
+          muscleGroups: [ex.muscleGroup],
+        };
+      }
+      if (!ex.muscleGroups) {
+        return {
+          ...ex,
+          muscleGroups: ["Autre"],
+        };
+      }
+      return ex;
+    });
+  };
+
   useEffect(() => {
     const storedExercises = localStorage.getItem('ironflow_exercises');
     const storedWorkouts = localStorage.getItem('ironflow_workouts');
     const storedUnit = localStorage.getItem('ironflow_unit');
 
     if (storedExercises) {
-      let parsed = JSON.parse(storedExercises);
-      // Migration: muscleGroup (string) -> muscleGroups (array)
-      parsed = parsed.map((ex: any) => {
-        if (!ex.muscleGroups && ex.muscleGroup) {
-          return {
-            ...ex,
-            muscleGroups: [ex.muscleGroup],
-          };
-        }
-        if (!ex.muscleGroups) {
-          return {
-            ...ex,
-            muscleGroups: ["Autre"],
-          };
-        }
-        return ex;
-      });
-      setExercises(parsed);
+      setExercises(migrateExercises(JSON.parse(storedExercises)));
     } else {
       setExercises(demoExercises);
     }
@@ -93,6 +94,15 @@ export function useWorkoutStore() {
     setWorkouts(prev => prev.filter(w => w.id !== id));
   };
 
+  const resetData = () => {
+    if (confirm("Attention : Cela va supprimer TOUTES vos données (exercices et séances). Continuer ?")) {
+      setExercises([]);
+      setWorkouts([]);
+      localStorage.removeItem('ironflow_exercises');
+      localStorage.removeItem('ironflow_workouts');
+    }
+  };
+
   const exportData = () => {
     const data = { exercises, workouts, unit };
     const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
@@ -106,7 +116,7 @@ export function useWorkoutStore() {
   const importData = (jsonData: string) => {
     try {
       const data = JSON.parse(jsonData);
-      if (data.exercises) setExercises(data.exercises);
+      if (data.exercises) setExercises(migrateExercises(data.exercises));
       if (data.workouts) setWorkouts(data.workouts);
       if (data.unit) setUnit(data.unit);
       return true;
@@ -127,6 +137,7 @@ export function useWorkoutStore() {
     addWorkout,
     updateWorkout,
     deleteWorkout,
+    resetData,
     exportData,
     importData,
     isLoaded

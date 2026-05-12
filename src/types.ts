@@ -40,7 +40,19 @@ export interface WorkoutSession {
 }
 
 export const MUSCLE_GROUPS = [
-  "Pectoraux", "Dos", "Épaules", "Biceps", "Triceps", 
-  "Quadriceps", "Ischios", "Fessiers", "Mollets", 
-  "Abdominaux", "Lombaires", "Autre"
+  "Pectoraux", 
+  "Lats", 
+  "Trapèzes",
+  "Épaules (Antérieur)", 
+  "Épaules (Latéral)", 
+  "Épaules (Postérieur)",
+  "Biceps", 
+  "Triceps", 
+  "Quadriceps", 
+  "Ischios", 
+  "Fessiers", 
+  "Mollets", 
+  "Abdominaux", 
+  "Lombaires", 
+  "Autre"
 ];

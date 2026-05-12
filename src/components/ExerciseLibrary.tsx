@@ -22,6 +22,7 @@ export function ExerciseLibrary({
   const [editingEx, setEditingEx] = useState<Exercise | null>(null);
 
   const [selectedMuscles, setSelectedMuscles] = useState<string[]>([]);
+  const [customMuscle, setCustomMuscle] = useState('');
 
   const filteredExercises = useMemo(() => {
     return exercises.filter(ex => 
@@ -33,9 +34,15 @@ export function ExerciseLibrary({
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
+    
+    let finalMuscles = [...selectedMuscles];
+    if (customMuscle.trim() && !finalMuscles.includes(customMuscle.trim())) {
+      finalMuscles.push(customMuscle.trim());
+    }
+
     const data = {
       name: formData.get('name') as string,
-      muscleGroups: selectedMuscles.length > 0 ? selectedMuscles : ["Autre"],
+      muscleGroups: finalMuscles.length > 0 ? finalMuscles : ["Autre"],
       description: formData.get('description') as string,
       imageUrl: formData.get('imageUrl') as string || null,
       isUnilateral: formData.get('isUnilateral') === 'on',
@@ -56,6 +63,7 @@ export function ExerciseLibrary({
     setIsModalOpen(false);
     setEditingEx(null);
     setSelectedMuscles([]);
+    setCustomMuscle('');
   };
 
   const openEditModal = (ex: Exercise, e: React.MouseEvent) => {
@@ -75,7 +83,7 @@ export function ExerciseLibrary({
     <div className="space-y-6 animate-in fade-in duration-500">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <h1 className="text-4xl text-white bebas tracking-wider">Bibliothèque</h1>
-        <Button variant="neon" className="gap-2" onClick={() => { setEditingEx(null); setSelectedMuscles([]); setIsModalOpen(true); }}>
+        <Button variant="neon" className="gap-2" onClick={() => { setEditingEx(null); setSelectedMuscles([]); setCustomMuscle(''); setIsModalOpen(true); }}>
           <Plus className="w-5 h-5" />
           Nouvel Exercice
         </Button>
@@ -172,6 +180,14 @@ export function ExerciseLibrary({
                   {mg}
                 </button>
               ))}
+            </div>
+            <div className="flex gap-2">
+              <Input 
+                value={customMuscle}
+                onChange={(e) => setCustomMuscle(e.target.value)}
+                placeholder="Ajouter un autre muscle..."
+                className="h-8 text-xs h-9"
+              />
             </div>
           </div>
 
