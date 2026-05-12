@@ -39,6 +39,16 @@ export interface WorkoutSession {
   entries: WorkoutEntry[];
 }
 
+export interface BodyMetric {
+  id: string;
+  date: string;
+  weight: number;
+  height?: number;
+  bodyFat?: number;
+}
+
+export type VolumeTargets = Record<string, number>;
+
 export const MUSCLE_GROUPS = [
   "Pectoraux", 
   "Lats", 

@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { WorkoutSession, Exercise } from '../types';
+import { WorkoutSession, Exercise, VolumeTargets } from '../types';
 import { Card, Badge } from './UI';
 import { 
   TrendingUp, 
@@ -29,13 +29,20 @@ import { fr } from 'date-fns/locale';
 
 export function Analytics({ 
   workouts, 
-  exercises 
+  exercises,
+  volumeTargets,
+  onUpdateVolumeTarget
 }: { 
   workouts: WorkoutSession[]; 
   exercises: Exercise[];
+  volumeTargets: VolumeTargets;
+  onUpdateVolumeTarget: (muscle: string, target: number) => void;
 }) {
   const [selectedExId, setSelectedExId] = useState<string>(exercises[0]?.id || '');
   const [period, setPeriod] = useState<number>(180); // Default 6 months in days
+
+  const [editingTarget, setEditingTarget] = useState<string | null>(null);
+  const [tempTarget, setTempTarget] = useState<number>(10);
 
   const exerciseData = useMemo(() => {
     if (!selectedExId) return [];
@@ -166,13 +173,16 @@ export function Analytics({
           <h2 className="text-xl text-white font-display uppercase tracking-tight flex items-center gap-2">
             <Flame className="w-5 h-5 text-neon" /> Volume Hebdomadaire (7j)
           </h2>
-          <Badge variant="gray">Cible : 4-10 séries / muscle</Badge>
+          <Badge variant="gray">Cible recommandée : 10-20 séries / muscle / semaine</Badge>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {weeklyMuscleVolume.map(mv => {
-            const isOptimal = mv.sets >= 4 && mv.sets <= 10;
-            const isLow = mv.sets < 4 && mv.sets > 0;
-            const isHigh = mv.sets > 10;
+            const target = volumeTargets[mv.name] || 10;
+            const progress = (mv.sets / target) * 100;
+            
+            const isOptimal = mv.sets >= target * 0.8 && mv.sets <= target * 1.2;
+            const isLow = mv.sets < target * 0.8 && mv.sets > 0;
+            const isHigh = mv.sets > target * 1.2;
             
             let statusColor = "text-gray-500";
             if (isOptimal) statusColor = "text-neon";
@@ -180,27 +190,68 @@ export function Analytics({
             if (isHigh) statusColor = "text-red-500";
 
             return (
-              <Card key={mv.name} className="p-4 bg-gradient-to-br from-dark-surface to-black/20">
-                <div className="flex justify-between items-center">
+              <Card 
+                key={mv.name} 
+                className="p-4 bg-gradient-to-br from-dark-surface to-black/20 group relative overflow-hidden"
+              >
+                <div className="flex justify-between items-start mb-2">
                   <div>
                     <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest leading-none mb-1">{mv.name}</p>
-                    <h4 className={`text-2xl font-mono ${statusColor}`}>{mv.sets} <span className="text-xs uppercase ml-1">Séries</span></h4>
+                    <div className="flex items-baseline gap-1">
+                      <h4 className={`text-2xl font-mono ${statusColor}`}>{mv.sets}</h4>
+                      <span className="text-[10px] text-gray-600 uppercase font-bold">/ {target} séries</span>
+                    </div>
                   </div>
-                  <div className={`w-2 h-10 rounded-full bg-black/40 overflow-hidden relative`}>
-                    <div 
-                      className={`absolute bottom-0 left-0 w-full transition-all duration-500 ${isOptimal ? 'bg-neon shadow-[0_0_10px_rgba(232,255,11,0.5)]' : isLow ? 'bg-sport-orange' : isHigh ? 'bg-red-500' : 'bg-gray-800'}`} 
-                      style={{ height: `${Math.min(mv.sets * 10, 100)}%` }} 
-                    />
+                  <button 
+                    onClick={() => {
+                      setEditingTarget(mv.name);
+                      setTempTarget(target);
+                    }}
+                    className="p-1.5 rounded-lg bg-white/5 opacity-0 group-hover:opacity-100 transition-all hover:bg-neon hover:text-black"
+                  >
+                    <Target className="w-3 h-3" />
+                  </button>
+                </div>
+
+                <div className="w-full h-1.5 bg-black/40 rounded-full overflow-hidden mb-3">
+                  <div 
+                    className={`h-full transition-all duration-500 ${isOptimal ? 'bg-neon shadow-[0_0_10px_rgba(232,255,11,0.5)]' : isLow ? 'bg-sport-orange' : isHigh ? 'bg-red-500' : 'bg-gray-800'}`} 
+                    style={{ width: `${Math.min(progress, 100)}%` }} 
+                  />
+                </div>
+
+                <div className="flex justify-between items-center text-[10px] font-bold uppercase tracking-tighter">
+                   <span className={statusColor}>{Math.round(progress)}% de l'objectif</span>
+                   {isHigh && <span className="text-red-500">Volume élevé !</span>}
+                </div>
+
+                {editingTarget === mv.name && (
+                  <div className="absolute inset-0 bg-dark-bg/95 backdrop-blur-sm p-4 flex flex-col justify-center items-center animate-in fade-in duration-200">
+                    <p className="text-[10px] text-gray-400 font-bold uppercase mb-2">Objectif {mv.name}</p>
+                    <div className="flex items-center gap-4 mb-4">
+                      <button onClick={() => setTempTarget(Math.max(1, tempTarget - 1))} className="w-8 h-8 rounded-full border border-white/10 flex items-center justify-center hover:bg-white/10 text-white">-</button>
+                      <span className="text-2xl font-mono text-neon">{tempTarget}</span>
+                      <button onClick={() => setTempTarget(tempTarget + 1)} className="w-8 h-8 rounded-full border border-white/10 flex items-center justify-center hover:bg-white/10 text-white">+</button>
+                    </div>
+                    <div className="flex gap-2 w-full">
+                      <button 
+                        onClick={() => setEditingTarget(null)}
+                        className="flex-1 py-1.5 rounded-lg text-[10px] font-bold uppercase bg-white/5 text-gray-400 hover:text-white"
+                      >
+                        Annuler
+                      </button>
+                      <button 
+                        onClick={() => {
+                          onUpdateVolumeTarget(mv.name, tempTarget);
+                          setEditingTarget(null);
+                        }}
+                        className="flex-1 py-1.5 rounded-lg text-[10px] font-bold uppercase bg-neon text-black"
+                      >
+                        Valider
+                      </button>
+                    </div>
                   </div>
-                </div>
-                <div className="mt-3 flex gap-1">
-                  {Array.from({ length: 12 }).map((_, i) => (
-                    <div 
-                      key={i} 
-                      className={`h-1 flex-1 rounded-full ${i < mv.sets ? (isOptimal ? 'bg-neon/40' : isLow ? 'bg-sport-orange/40' : 'bg-red-500/40') : 'bg-white/5'}`}
-                    />
-                  ))}
-                </div>
+                )}
               </Card>
             );
           })}
