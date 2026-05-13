@@ -12,10 +12,13 @@ export function Button({
   className, 
   variant = 'primary', 
   size = 'md', 
+  loading,
+  children,
   ...props 
 }: React.ButtonHTMLAttributes<HTMLButtonElement> & { 
   variant?: 'primary' | 'secondary' | 'outline' | 'ghost' | 'danger' | 'neon';
   size?: 'sm' | 'md' | 'lg' | 'icon';
+  loading?: boolean;
 }) {
   const variants = {
     primary: 'bg-sport-orange text-white hover:bg-orange-600 shadow-lg shadow-orange-900/20',
@@ -35,14 +38,20 @@ export function Button({
 
   return (
     <button 
+      disabled={loading || props.disabled}
       className={cn(
-        'inline-flex items-center justify-center rounded-lg font-medium transition-all active:scale-95 disabled:opacity-50 disabled:pointer-events-none uppercase tracking-wider font-display',
+        'inline-flex items-center justify-center rounded-lg font-medium transition-all active:scale-95 disabled:opacity-50 disabled:pointer-events-none uppercase tracking-wider font-display gap-2',
         variants[variant],
         sizes[size],
         className
       )}
       {...props}
-    />
+    >
+      {loading && (
+        <div className="w-3 h-3 border-2 border-current border-t-transparent rounded-full animate-spin" />
+      )}
+      {children}
+    </button>
   );
 }
 

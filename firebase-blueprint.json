@@ -1,0 +1,59 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "Système de profil utilisateur pour la communauté",
+      "type": "object",
+      "properties": {
+        "displayName": { "type": "string" },
+        "photoURL": { "type": "string" },
+        "bio": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "lastActive": { "type": "string", "format": "date-time" }
+      },
+      "required": ["displayName"]
+    },
+    "ManualPR": {
+      "title": "Manual PR",
+      "description": "Record personnel de force",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "exerciseName": { "type": "string" },
+        "weight": { "type": "number" },
+        "reps": { "type": "number" },
+        "date": { "type": "string", "format": "date-time" },
+        "isWeighted": { "type": "boolean" },
+        "bodyWeight": { "type": "number" }
+      },
+      "required": ["userId", "exerciseName", "weight", "reps", "date"]
+    },
+    "Workout": {
+      "title": "Workout Session",
+      "description": "Séance d'entraînement enregistrée",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "name": { "type": "string" },
+        "date": { "type": "string", "format": "date-time" },
+        "notes": { "type": "string" },
+        "entries": { "type": "array" }
+      },
+      "required": ["userId", "name", "date", "entries"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "User",
+      "description": "Profils utilisateurs"
+    },
+    "/manual_prs/{prId}": {
+      "schema": "ManualPR",
+      "description": "Records personnels indexés par ID"
+    },
+    "/workouts/{workoutId}": {
+      "schema": "Workout",
+      "description": "Séances d'entraînement partagées"
+    }
+  }
+}
