@@ -66,6 +66,7 @@ export function Analytics({
           weight: maxWeight,
           weightLeft: weightLeft || null,
           weightRight: weightRight || null,
+          volume: totalVolume,
           rir: isNaN(avgRir) ? null : Number(avgRir.toFixed(1))
         };
       })
@@ -135,8 +136,11 @@ export function Analytics({
   const prs = useMemo(() => {
     if (exerciseData.length === 0) return null;
     const maxWeight = Math.max(...exerciseData.map(d => d!.weight));
+    const maxVolume = Math.max(...exerciseData.map(d => d!.volume));
     const latestWeight = exerciseData[exerciseData.length - 1]!.weight;
     
+    // 1RM Estimate (Epley): 1RM = weight * (1 + reps / 30)
+    // For simplicity, we just use the max PR set
     let best1RM = 0;
     workouts.filter(w => w.status === 'completed').forEach(w => {
       w.entries.forEach(e => {
@@ -151,6 +155,7 @@ export function Analytics({
 
     return {
       weight: maxWeight,
+      volume: maxVolume,
       oneRM: Math.round(best1RM),
       latest: latestWeight
     };
@@ -278,7 +283,7 @@ export function Analytics({
       {exerciseData.length > 0 ? (
         <>
           {/* PR Grid */}
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <Card className="p-4 text-center space-y-1">
               <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest">PR Poids</p>
               <p className="text-3xl text-neon font-mono">{prs?.weight}kg</p>
@@ -286,6 +291,10 @@ export function Analytics({
             <Card className="p-4 text-center space-y-1">
               <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest">Est. 1RM</p>
               <p className="text-3xl text-sport-orange font-mono">{prs?.oneRM}kg</p>
+            </Card>
+            <Card className="p-4 text-center space-y-1">
+              <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest">PR Volume</p>
+              <p className="text-xl text-white font-mono">{prs?.volume.toLocaleString()}kg</p>
             </Card>
             <Card className="p-4 text-center space-y-1">
               <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest">Dernière Séance</p>
@@ -388,15 +397,21 @@ export function Analytics({
             <p className="text-4xl text-neon font-mono mb-4">{workouts.filter(w => w.status === 'completed').length}</p>
             <p className="text-xs text-gray-500 uppercase font-bold tracking-widest">Séances Enregistrées Validées</p>
             
-            <div className="mt-8 grid grid-cols-1 gap-8 w-full border-t border-white/5 pt-8 text-center">
+            <div className="mt-8 grid grid-cols-2 gap-8 w-full border-t border-white/5 pt-8">
                 <div>
                    <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest mb-1">Séries Totales</p>
-                   <p className="text-4xl text-white font-mono italic">
+                   <p className="text-2xl text-white font-mono">
                     {workouts.filter(w => w.status === 'completed').reduce((acc, w) => acc + w.entries.reduce((acc2, e) => {
                       const ex = exercises.find(ex => ex.id === e.exerciseId);
                       const setsCount = ex?.isUnilateral ? e.sets.length / 2 : e.sets.length;
                       return acc2 + setsCount;
                     }, 0), 0)}
+                   </p>
+                </div>
+                <div>
+                   <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest mb-1">Record de Séance</p>
+                   <p className="text-2xl text-white font-mono">
+                    {Math.max(0, ...workouts.filter(w => w.status === 'completed').map(w => w.entries.reduce((acc, e) => acc + e.sets.reduce((acc2, s) => acc2 + (s.weight * s.reps), 0), 0))).toLocaleString()}kg
                    </p>
                 </div>
             </div>

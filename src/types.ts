@@ -38,7 +38,6 @@ export interface WorkoutSession {
   notes?: string;
   status?: 'draft' | 'completed';
   entries: WorkoutEntry[];
-  isShared?: boolean;
 }
 
 export interface BodyMetric {
@@ -48,19 +47,6 @@ export interface BodyMetric {
   bodyFat?: number;
 }
 
-export interface UserProfile {
-  id: string;
-  displayName: string;
-  photoURL?: string;
-  bio?: string;
-  createdAt: string;
-  lastActive: string;
-  height?: number;
-  isPublic?: boolean;
-  xp?: number;
-  level?: number;
-}
-
 export interface ManualPR {
   id: string;
   exerciseName: string;
@@ -68,8 +54,7 @@ export interface ManualPR {
   reps: number;
   date: string;
   isWeighted?: boolean;
-  bodyWeight?: number;
-  isShared?: boolean;
+  bodyWeight?: number; // Weight of the user at the time of PR
 }
 
 export type VolumeTargets = Record<string, number>;
