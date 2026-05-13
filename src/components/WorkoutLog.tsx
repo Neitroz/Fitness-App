@@ -192,11 +192,13 @@ export function WorkoutLog({
             <h2 className="text-xl text-white font-display">Modifier Séance</h2>
           </div>
           <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm" className="hidden sm:flex gap-2" onClick={() => saveWorkout(false)}>
-              <Save className="w-4 h-4" /> Sauvegarder
+            <Button variant="outline" size="sm" className="gap-2 px-3 sm:px-4" onClick={() => saveWorkout(false)}>
+              <Save className="w-4 h-4" /> 
+              <span className="hidden sm:inline">Sauvegarder</span>
             </Button>
-            <Button variant="neon" size="sm" className="gap-2" onClick={() => saveWorkout(true)}>
-              <CheckCircle2 className="w-4 h-4" /> Finir la séance
+            <Button variant="neon" size="sm" className="gap-2 px-3 sm:px-4" onClick={() => saveWorkout(true)}>
+              <CheckCircle2 className="w-4 h-4" /> 
+              <span className="hidden sm:inline">Finir la séance</span>
             </Button>
           </div>
         </div>
@@ -421,7 +423,14 @@ export function WorkoutLog({
       <div className="space-y-4">
         {workouts.map(w => {
           const volume = w.entries.reduce((acc, e) => {
+            const ex = exercises.find(ex => ex.id === e.exerciseId);
             return acc + e.sets.reduce((acc2, s) => acc2 + (s.weight * s.reps * (s.side === 'both' ? 2 : 1)), 0);
+          }, 0);
+
+          const totalEffectiveSets = w.entries.reduce((acc, e) => {
+            const ex = exercises.find(ex => ex.id === e.exerciseId);
+            const setsCount = ex?.isUnilateral ? e.sets.length / 2 : e.sets.length;
+            return acc + setsCount;
           }, 0);
 
           return (
@@ -451,6 +460,7 @@ export function WorkoutLog({
                   <h3 className="text-2xl text-white font-display uppercase group-hover:text-neon transition-colors">{w.name}</h3>
                   <div className="flex flex-wrap gap-2 pt-1">
                     <Badge variant="gray">{w.entries.length} Exercices</Badge>
+                    <Badge variant="gray">{totalEffectiveSets} {totalEffectiveSets > 1 ? 'Séries' : 'Série'}</Badge>
                     <Badge variant="gray">{volume.toLocaleString()}kg Volume</Badge>
                   </div>
                 </div>

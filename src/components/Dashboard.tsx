@@ -24,7 +24,11 @@ export function Dashboard({
   }, [workouts]);
 
   const stats = useMemo(() => {
-    const totalSets = last7Days.reduce((acc, w) => acc + w.entries.reduce((acc2, e) => acc2 + e.sets.length, 0), 0);
+    const totalSets = last7Days.reduce((acc, w) => acc + w.entries.reduce((acc2, e) => {
+      const ex = exercises.find(ex => ex.id === e.exerciseId);
+      const setsCount = ex?.isUnilateral ? e.sets.length / 2 : e.sets.length;
+      return acc2 + setsCount;
+    }, 0), 0);
     const uniqueExercises = new Set(last7Days.flatMap(w => w.entries.map(e => e.exerciseId))).size;
     
     return {
@@ -202,10 +206,11 @@ export function Dashboard({
             <div className="flex flex-wrap gap-2 pt-2">
               {lastWorkout.entries.map(e => {
                 const ex = exercises.find(ex => ex.id === e.exerciseId);
+                const setsCount = ex?.isUnilateral ? e.sets.length / 2 : e.sets.length;
                 return (
                   <div key={e.id} className="flex flex-col gap-1">
                     <Badge variant="gray">
-                      {ex?.name} ({e.sets.length} séries)
+                      {ex?.name} ({setsCount} {setsCount > 1 ? 'séries' : 'série'})
                     </Badge>
                   </div>
                 );

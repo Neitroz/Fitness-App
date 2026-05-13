@@ -34,12 +34,6 @@ import { Exercise } from './types';
 
 type View = 'dashboard' | 'exercises' | 'workouts' | 'analytics' | 'profile' | 'settings';
 
-const AbstractLogo = ({ className }: { className?: string }) => (
-  <svg viewBox="0 0 100 100" className={className} fill="none" xmlns="http://www.w3.org/2000/svg">
-    <path d="M15 25L35 75L50 45L65 75L85 25" stroke="currentColor" strokeWidth="12" strokeLinecap="round" strokeLinejoin="round"/>
-  </svg>
-);
-
 export default function App() {
   const store = useWorkoutStore();
   const [currentView, setCurrentView] = useState<View>('dashboard');
@@ -52,7 +46,7 @@ export default function App() {
       <div className="min-h-screen bg-dark-bg flex items-center justify-center">
         <div className="flex flex-col items-center gap-4">
           <div className="w-16 h-16 border-4 border-neon border-t-transparent rounded-full animate-spin"></div>
-          <p className="text-neon font-display text-xl uppercase tracking-widest animate-pulse">Wil...</p>
+          <p className="text-neon font-display text-xl uppercase tracking-widest animate-pulse">Track&W...</p>
         </div>
       </div>
     );
@@ -193,7 +187,7 @@ export default function App() {
               <div className="pt-8 border-t border-white/5">
                 <div className="flex items-center gap-3 text-gray-600 bg-black/20 p-4 rounded-xl border border-white/5">
                   <ShieldCheck className="w-5 h-5 text-neon" />
-                  <p className="text-xs">Tes données restent locales sur cet appareil. Wil ne stocke aucune donnée sur ses serveurs.</p>
+                  <p className="text-xs">Tes données restent locales sur cet appareil. Track&W ne stocke aucune donnée sur ses serveurs.</p>
                 </div>
               </div>
             </Card>
@@ -210,9 +204,9 @@ export default function App() {
       <header className="md:hidden flex items-center justify-between p-4 bg-dark-surface border-b border-white/5 sticky top-0 z-30">
         <div className="flex items-center gap-2">
           <div className="w-8 h-8 bg-neon rounded flex items-center justify-center p-1.5">
-            <AbstractLogo className="w-full h-full text-black" />
+            <Dumbbell className="w-full h-full text-black" />
           </div>
-          <span className="bebas text-2xl tracking-widest text-neon">WIL</span>
+          <span className="bebas text-2xl tracking-widest text-neon uppercase">Track&W</span>
         </div>
         <button onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} className="p-2 text-gray-400">
           {isMobileMenuOpen ? <X /> : <Menu />}
@@ -227,9 +221,9 @@ export default function App() {
       `}>
         <div className="hidden md:flex items-center gap-3">
           <div className="w-10 h-10 bg-neon rounded-lg flex items-center justify-center shadow-lg shadow-neon/20 p-2">
-            <AbstractLogo className="w-full h-full text-black" />
+            <Dumbbell className="w-full h-full text-black" />
           </div>
-          <h1 className="bebas text-3xl tracking-[0.2em] text-white">WIL</h1>
+          <h1 className="bebas text-3xl tracking-[0.1em] text-white uppercase">Track&W</h1>
         </div>
 
         <div className="flex flex-col gap-2">

@@ -84,8 +84,9 @@ export function Analytics({
       w.entries.forEach(e => {
         const ex = exercises.find(ex => ex.id === e.exerciseId);
         if (ex) {
+          const setsCount = ex.isUnilateral ? e.sets.length / 2 : e.sets.length;
           (ex.muscleGroups || []).forEach(mg => {
-            counts[mg] = (counts[mg] || 0) + e.sets.length;
+            counts[mg] = (counts[mg] || 0) + setsCount;
           });
         }
       });
@@ -101,8 +102,9 @@ export function Analytics({
       w.entries.forEach(e => {
         const ex = exercises.find(ex => ex.id === e.exerciseId);
         if (ex) {
+          const setsCount = ex.isUnilateral ? e.sets.length / 2 : e.sets.length;
           (ex.muscleGroups || []).forEach(mg => {
-            counts[mg] = (counts[mg] || 0) + e.sets.length;
+            counts[mg] = (counts[mg] || 0) + setsCount;
           });
         }
       });
@@ -173,7 +175,7 @@ export function Analytics({
           <h2 className="text-xl text-white font-display uppercase tracking-tight flex items-center gap-2">
             <Flame className="w-5 h-5 text-neon" /> Volume Hebdomadaire (7j)
           </h2>
-          <Badge variant="gray">Cible recommandée : 10-20 séries / muscle / semaine</Badge>
+          <Badge variant="gray">Cible recommandée : 4-10 séries / muscle / semaine</Badge>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {weeklyMuscleVolume.map(mv => {
@@ -425,7 +427,11 @@ export function Analytics({
                 <div>
                    <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest mb-1">Séries Totales</p>
                    <p className="text-2xl text-white font-mono">
-                    {workouts.filter(w => w.status === 'completed').reduce((acc, w) => acc + w.entries.reduce((acc2, e) => acc2 + e.sets.length, 0), 0)}
+                    {workouts.filter(w => w.status === 'completed').reduce((acc, w) => acc + w.entries.reduce((acc2, e) => {
+                      const ex = exercises.find(ex => ex.id === e.exerciseId);
+                      const setsCount = ex?.isUnilateral ? e.sets.length / 2 : e.sets.length;
+                      return acc2 + setsCount;
+                    }, 0), 0)}
                    </p>
                 </div>
                 <div>
