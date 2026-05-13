@@ -537,12 +537,14 @@ export function WorkoutLog({
                     <Copy className="w-4 h-4" /> Copier
                   </Button>
                   <button 
-                    onClick={() => { if(confirm('Supprimer cette séance ?')) onDeleteWorkout(w.id); }}
+                    onClick={(e) => { 
+                      e.stopPropagation();
+                      if(confirm('Supprimer cette séance ?')) onDeleteWorkout(w.id); 
+                    }}
                     className="p-2 text-gray-700 hover:text-red-500 transition-colors"
                   >
                     <Trash2 className="w-5 h-5" />
                   </button>
-                  <ChevronRight className="w-5 h-5 text-gray-800 group-hover:text-neon transition-colors" />
                 </div>
               </div>
             </Card>

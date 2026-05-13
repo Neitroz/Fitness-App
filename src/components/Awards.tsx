@@ -243,8 +243,8 @@ export function Awards({ workouts, exercises, manualPRs, bodyMetrics = [], userS
               <Zap className="w-6 h-6 text-black" />
             </div>
             <div>
-              <p className="text-[10px] text-gray-500 font-bold uppercase tracking-[0.1em]">Série Actuelle</p>
-              <p className="text-2xl text-white bebas tracking-wider leading-none">{userStats?.streak} Jours</p>
+              <p className="text-[10px] text-gray-500 font-bold uppercase tracking-[0.1em]">Série Hebdomadaire</p>
+              <p className="text-2xl text-white bebas tracking-wider leading-none">{userStats?.streak} Semaines</p>
             </div>
           </Card>
 

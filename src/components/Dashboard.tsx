@@ -105,9 +105,12 @@ export function Dashboard({
           <p className="text-gray-400 text-sm">Tes progrès des 7 derniers jours.</p>
         </div>
         <div className="flex flex-col sm:flex-row gap-4 items-center">
-          <Card className="flex items-center gap-4 px-4 py-3 bg-gradient-to-r from-neon/10 to-transparent border-neon/20 shadow-[0_0_20px_rgba(232,255,11,0.05)] w-full sm:w-64">
+          <Card 
+            className="flex items-center gap-4 px-4 py-3 bg-gradient-to-r from-neon/10 to-transparent border-neon/20 shadow-[0_0_20px_rgba(232,255,11,0.05)] w-full sm:w-64 cursor-pointer hover:border-neon/40 transition-all group"
+            onClick={() => onViewChange?.('awards')}
+          >
             <div className="relative">
-              <div className="w-12 h-12 rounded-lg bg-neon flex items-center justify-center text-black font-display text-2xl italic tracking-tighter shadow-lg shadow-neon/20">
+              <div className="w-12 h-12 rounded-lg bg-neon flex items-center justify-center text-black font-display text-2xl italic tracking-tighter shadow-lg shadow-neon/20 group-hover:scale-110 transition-transform">
                 {userStats?.level}
               </div>
               <div className="absolute -top-1 -right-1 w-4 h-4 bg-sport-orange rounded-full flex items-center justify-center border-2 border-dark-bg">

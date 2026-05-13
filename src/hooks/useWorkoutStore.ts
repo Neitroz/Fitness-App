@@ -147,6 +147,57 @@ export function useWorkoutStore() {
     setExercises(prev => prev.filter(e => e.id !== id));
   };
 
+  useEffect(() => {
+    if (!isLoaded) return;
+    
+    // Weekly Streak Calculation
+    const getWeekKey = (date: Date) => {
+      const d = new Date(date);
+      d.setHours(0, 0, 0, 0);
+      d.setDate(d.getDate() + 3 - (d.getDay() + 6) % 7);
+      const week1 = new Date(d.getFullYear(), 0, 4);
+      return `${d.getFullYear()}-W${1 + Math.round(((d.getTime() - week1.getTime()) / 86400000 - 3 + (week1.getDay() + 6) % 7) / 7)}`;
+    };
+
+    const completedDates = workouts
+      .filter(w => w.status === 'completed')
+      .map(w => new Date(w.date));
+
+    const uniqueWeeks = Array.from(new Set(completedDates.map(getWeekKey))).sort().reverse();
+    
+    let streak = 0;
+    if (uniqueWeeks.length > 0) {
+      const currentWeekKey = getWeekKey(new Date());
+      const latestWorkoutWeek = uniqueWeeks[0];
+      const today = new Date();
+      const lastWeek = new Date();
+      lastWeek.setDate(today.getDate() - 7);
+      const lastWeekKey = getWeekKey(lastWeek);
+
+      if (latestWorkoutWeek === currentWeekKey || latestWorkoutWeek === lastWeekKey) {
+        streak = 1;
+        for (let i = 0; i < uniqueWeeks.length - 1; i++) {
+          const current = uniqueWeeks[i];
+          const next = uniqueWeeks[i+1];
+          const d1 = new Date(completedDates.find(d => getWeekKey(d) === current)!);
+          const d2 = new Date(completedDates.find(d => getWeekKey(d) === next)!);
+          const diffDays = Math.abs(d1.getTime() - d2.getTime()) / (1000 * 60 * 60 * 24);
+          
+          if (diffDays <= 14) streak++;
+          else break;
+        }
+      }
+    }
+
+    if (userStats.streak !== streak || userStats.totalWorkouts !== workouts.filter(w => w.status === 'completed').length) {
+      setUserStats(prev => ({ 
+        ...prev, 
+        streak, 
+        totalWorkouts: workouts.filter(w => w.status === 'completed').length 
+      }));
+    }
+  }, [workouts, isLoaded]);
+
   const awardXP = (session: WorkoutSession) => {
     const { total } = calculateWorkoutXP(session, workouts);
     setUserStats(prev => {
@@ -155,15 +206,12 @@ export function useWorkoutStore() {
       const levelUp = newLevel > prev.level;
       
       setXpNotification({ xp: total, levelUp });
-      
-      // Auto-hide notification
       setTimeout(() => setXpNotification(null), 5000);
 
       return {
         ...prev,
         xp: newXP,
         level: newLevel,
-        totalWorkouts: prev.totalWorkouts + 1,
         lastWorkoutDate: new Date().toISOString()
       };
     });
