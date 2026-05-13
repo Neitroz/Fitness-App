@@ -15,11 +15,13 @@ import {
   X,
   Copy,
   CheckCircle2,
-  Check
+  Check,
+  Activity
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { v4 as uuidv4 } from 'uuid';
+import { BodyFront, BodyBack } from './BodyHeatmap';
 
 export function WorkoutLog({ 
   workouts, 
@@ -40,6 +42,22 @@ export function WorkoutLog({
 }) {
   const [isAddingEjercicio, setIsAddingEjercicio] = useState(false);
   const [searchEx, setSearchEx] = useState('');
+
+  const currentMuscleVolume = useMemo(() => {
+    if (!currentWorkout) return [];
+    const counts: Record<string, number> = {};
+    currentWorkout.entries.forEach(e => {
+      const ex = exercises.find(ex => ex.id === e.exerciseId);
+      if (ex) {
+        const setsCount = ex.isUnilateral ? e.sets.length / 2 : e.sets.length;
+        (ex.muscleGroups || []).forEach(mg => {
+          counts[mg] = (counts[mg] || 0) + setsCount;
+        });
+      }
+    });
+    return Object.entries(counts).map(([name, sets]) => ({ name, sets }));
+  }, [currentWorkout, exercises]);
+
 
   const filteredExercises = useMemo(() => {
     return exercises.filter(ex => ex.name.toLowerCase().includes(searchEx.toLowerCase()));
@@ -375,6 +393,46 @@ export function WorkoutLog({
               placeholder="Comment s'est passée la séance ?"
             />
           </div>
+
+          {/* Real-time Heatmap */}
+          <Card className="p-6 mt-8">
+            <div className="flex items-center justify-between mb-4 border-b border-white/5 pb-4">
+              <div className="flex items-center gap-2">
+                <Activity className="w-5 h-5 text-neon" />
+                <h3 className="text-lg text-white font-display uppercase">Groupes sollicités</h3>
+              </div>
+              <Badge variant="neon" className="animate-pulse">Temps Réel</Badge>
+            </div>
+            
+            <div className="flex flex-col sm:flex-row items-center justify-around gap-8">
+              <div className="flex flex-col items-center gap-3">
+                <p className="text-[9px] text-gray-500 font-bold uppercase tracking-widest">Face</p>
+                <div className="w-32 h-56">
+                  <BodyFront volumeData={currentMuscleVolume} />
+                </div>
+              </div>
+              <div className="flex flex-col items-center gap-3">
+                <p className="text-[9px] text-gray-500 font-bold uppercase tracking-widest">Dos</p>
+                <div className="w-32 h-56">
+                  <BodyBack volumeData={currentMuscleVolume} />
+                </div>
+              </div>
+
+              {/* Summary List */}
+              <div className="bg-black/20 p-3 rounded-lg border border-white/5 space-y-2 w-full sm:w-40 h-fit">
+                {currentMuscleVolume.length > 0 ? (
+                  currentMuscleVolume.sort((a,b) => b.sets - a.sets).slice(0, 5).map(mv => (
+                    <div key={mv.name} className="flex justify-between items-center gap-2">
+                      <span className="text-[10px] text-gray-400 font-bold uppercase truncate">{mv.name}</span>
+                      <span className="text-[10px] text-neon font-mono">{mv.sets}</span>
+                    </div>
+                  ))
+                ) : (
+                  <p className="text-[10px] text-gray-600 text-center uppercase tracking-widest">Aucun muscle sollicité</p>
+                )}
+              </div>
+            </div>
+          </Card>
         </div>
 
         <Modal isOpen={isAddingEjercicio} onClose={() => setIsAddingEjercicio(false)} title="Sélectionner un exercice">

@@ -17,15 +17,11 @@ import {
   CartesianGrid, 
   Tooltip, 
   ResponsiveContainer, 
-  Legend,
-  BarChart,
-  Bar,
-  Cell,
   PieChart,
-  Pie
+  Pie,
+  Cell
 } from 'recharts';
-import { format, subDays, isAfter, startOfDay } from 'date-fns';
-import { fr } from 'date-fns/locale';
+import { format, subDays, isAfter } from 'date-fns';
 
 export function Analytics({ 
   workouts, 
@@ -321,7 +317,6 @@ export function Analytics({
                       contentStyle={{ backgroundColor: '#12121a', border: '1px solid #2d2d3d', borderRadius: '8px' }}
                       itemStyle={{ color: '#e8ff47' }}
                     />
-                    <Legend />
                     <Line 
                       type="monotone" 
                       dataKey="weight" 
@@ -354,26 +349,6 @@ export function Analytics({
                       </>
                     )}
                   </LineChart>
-                </ResponsiveContainer>
-              </div>
-            </Card>
-
-            <Card className="p-6 h-[400px]">
-              <h3 className="text-lg text-white mb-6 uppercase tracking-tight flex items-center gap-2">
-                <BarChart3 className="w-5 h-5 text-sport-orange" /> Volume par Séance
-              </h3>
-              <div className="w-full h-full pb-8">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={exerciseData}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#1f1f2e" vertical={false} />
-                    <XAxis dataKey="date" stroke="#4b5563" fontSize={10} axisLine={false} tickLine={false} />
-                    <YAxis stroke="#4b5563" fontSize={10} axisLine={false} tickLine={false} />
-                    <Tooltip 
-                      contentStyle={{ backgroundColor: '#12121a', border: '1px solid #2d2d3d', borderRadius: '8px' }}
-                      itemStyle={{ color: '#ff6b35' }}
-                    />
-                    <Bar dataKey="volume" fill="#ff6b35" radius={[4, 4, 0, 0]} />
-                  </BarChart>
                 </ResponsiveContainer>
               </div>
             </Card>
@@ -411,7 +386,6 @@ export function Analytics({
                 <Tooltip 
                   contentStyle={{ backgroundColor: '#12121a', border: '1px solid #2d2d3d', borderRadius: '8px' }}
                 />
-                <Legend iconType="circle" />
               </PieChart>
             </ResponsiveContainer>
           </div>
@@ -446,3 +420,4 @@ export function Analytics({
     </div>
   );
 }
+
