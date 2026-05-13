@@ -1,6 +1,6 @@
 {
   "name": "Track&W",
   "description": "Track&W - Performance Tracker & Body Analytics",
-  "requestFramePermissions": [],
+  "requestFramePermissions": ["camera"],
   "majorCapabilities": []
 }

@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
-import { Exercise, WorkoutSession, BodyMetric } from '../types';
+import { Exercise, WorkoutSession, BodyMetric, ManualPR } from '../types';
 import { Card, Button, Badge } from './UI';
-import { Activity, Dumbbell, Trophy, Plus, ChevronRight, Scale, TrendingUp, TrendingDown } from 'lucide-react';
+import { Activity, Dumbbell, Trophy, Plus, ChevronRight, Scale, TrendingUp, TrendingDown, Star } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 import { format, subDays, isWithinInterval, startOfDay } from 'date-fns';
 import { fr } from 'date-fns/locale';
@@ -10,12 +10,16 @@ export function Dashboard({
   workouts, 
   exercises, 
   bodyMetrics,
-  onStartWorkout 
+  manualPRs,
+  onStartWorkout,
+  onViewChange
 }: { 
   workouts: WorkoutSession[]; 
   exercises: Exercise[];
   bodyMetrics: BodyMetric[];
+  manualPRs?: ManualPR[];
   onStartWorkout: () => void;
+  onViewChange?: (view: string) => void;
 }) {
   const last7Days = useMemo(() => {
     const now = new Date();
@@ -50,7 +54,12 @@ export function Dashboard({
   }, [bodyMetrics]);
 
   const recentPRs = useMemo(() => {
-    // Basic PR detection: max(weight * reps) for each exercise in last workout
+    if (manualPRs && manualPRs.length > 0) {
+      return [...manualPRs]
+        .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+        .slice(0, 3);
+    }
+    // Fallback to automatic detection if no manual PRs
     if (!lastWorkout) return [];
     
     return lastWorkout.entries.map(entry => {
@@ -149,11 +158,11 @@ export function Dashboard({
         <Card className="p-4 md:p-6 bg-gradient-to-br from-dark-surface to-black/40">
           <div className="flex justify-between items-start">
             <div>
-              <p className="text-gray-500 text-[10px] md:text-xs font-bold uppercase tracking-widest mb-1">Séries</p>
-              <h3 className="text-2xl md:text-3xl text-white font-mono">{stats.setsCount}</h3>
+              <p className="text-gray-500 text-[10px] md:text-xs font-bold uppercase tracking-widest mb-1">Impact XP</p>
+              <h3 className="text-2xl md:text-3xl text-white font-mono">{(workouts.reduce((acc, w) => acc + 100 + (w.entries.length * 20), 0) + (manualPRs?.length || 0) * 50)}</h3>
             </div>
-            <div className="bg-blue-500/10 p-1.5 md:p-2 rounded-lg">
-              <Trophy className="w-4 h-4 md:w-5 md:h-5 text-blue-500" />
+            <div className="bg-neon/10 p-1.5 md:p-2 rounded-lg">
+              <Star className="w-4 h-4 md:w-5 md:h-5 text-neon" />
             </div>
           </div>
         </Card>
@@ -221,16 +230,24 @@ export function Dashboard({
           )}
 
           <div className="space-y-3">
-            <h3 className="text-lg text-white">Records Récents</h3>
+            <div className="flex items-center justify-between">
+              <h3 className="text-lg text-white">Records Récents</h3>
+              <button 
+                onClick={() => onViewChange?.('awards')}
+                className="text-[10px] text-neon font-bold uppercase tracking-widest hover:underline"
+              >
+                Voir tout
+              </button>
+            </div>
             <div className="space-y-2">
               {recentPRs.length > 0 ? recentPRs.map((pr, i) => (
                 <div key={i} className="flex items-center justify-between p-3 bg-black/20 rounded-lg border border-white/5">
                   <div className="flex items-center gap-3">
                     <div className="w-8 h-8 rounded-full bg-neon/10 flex items-center justify-center text-neon text-xs font-bold">
-                      PR
+                      {pr.id ? 'REC' : 'PR'}
                     </div>
                     <div>
-                      <p className="text-sm font-medium text-white">{pr.exerciseName}</p>
+                      <p className="text-sm font-medium text-white">{pr.exerciseName || (pr as any).name}</p>
                       <p className="text-xs text-gray-500">{format(new Date(pr.date), 'dd/MM/yy')}</p>
                     </div>
                   </div>

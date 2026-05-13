@@ -12,10 +12,13 @@ export function Button({
   className, 
   variant = 'primary', 
   size = 'md', 
+  loading,
+  children,
   ...props 
 }: React.ButtonHTMLAttributes<HTMLButtonElement> & { 
   variant?: 'primary' | 'secondary' | 'outline' | 'ghost' | 'danger' | 'neon';
   size?: 'sm' | 'md' | 'lg' | 'icon';
+  loading?: boolean;
 }) {
   const variants = {
     primary: 'bg-sport-orange text-white hover:bg-orange-600 shadow-lg shadow-orange-900/20',
@@ -35,14 +38,20 @@ export function Button({
 
   return (
     <button 
+      disabled={loading || props.disabled}
       className={cn(
-        'inline-flex items-center justify-center rounded-lg font-medium transition-all active:scale-95 disabled:opacity-50 disabled:pointer-events-none uppercase tracking-wider font-display',
+        'inline-flex items-center justify-center rounded-lg font-medium transition-all active:scale-95 disabled:opacity-50 disabled:pointer-events-none uppercase tracking-wider font-display gap-2',
         variants[variant],
         sizes[size],
         className
       )}
       {...props}
-    />
+    >
+      {loading && (
+        <div className="w-3 h-3 border-2 border-current border-t-transparent rounded-full animate-spin" />
+      )}
+      {children}
+    </button>
   );
 }
 
@@ -104,19 +113,26 @@ export function Modal({
   );
 }
 
-export function Input({ className, ...props }: React.InputHTMLAttributes<HTMLInputElement>) {
+export function Input({ className, label, ...props }: React.InputHTMLAttributes<HTMLInputElement> & { label?: string }) {
   return (
-    <input 
-      className={cn(
-        'w-full bg-black/30 border border-white/10 rounded-lg px-4 py-2.5 text-white placeholder:text-gray-600 focus:outline-none focus:border-neon/50 focus:ring-1 focus:ring-neon/20 transition-all',
-        className
+    <div className="space-y-1.5 w-full">
+      {label && (
+        <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-widest ml-1">
+          {label}
+        </label>
       )}
-      onFocus={(e) => {
-        if (props.type === 'number') e.target.select();
-        props.onFocus?.(e);
-      }}
-      {...props}
-    />
+      <input 
+        className={cn(
+          'w-full bg-black/30 border border-white/10 rounded-lg px-4 py-2.5 text-white placeholder:text-gray-600 focus:outline-none focus:border-neon/50 focus:ring-1 focus:ring-neon/20 transition-all',
+          className
+        )}
+        onFocus={(e) => {
+          if (props.type === 'number') e.target.select();
+          props.onFocus?.(e);
+        }}
+        {...props}
+      />
+    </div>
   );
 }
 

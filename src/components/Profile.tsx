@@ -1,6 +1,8 @@
 import React, { useState, useMemo } from 'react';
 import { BodyMetric } from '../types';
 import { Card, Button, Input } from './UI';
+import { db } from '../lib/firebase';
+import { doc, getDoc } from 'firebase/firestore';
 import { 
   User, 
   Scale, 
@@ -30,18 +32,35 @@ export function Profile({
   userHeight,
   onUpdateHeight,
   onAddMetric, 
-  onDeleteMetric 
+  onDeleteMetric,
+  onUpdateProfile,
+  currentUser
 }: { 
   bodyMetrics: BodyMetric[];
   userHeight: number | null;
   onUpdateHeight: (height: number) => void;
   onAddMetric: (metric: BodyMetric) => void;
   onDeleteMetric: (id: string) => void;
+  onUpdateProfile: (data: { bio?: string }) => void;
+  currentUser: any;
 }) {
   const [weight, setWeight] = useState('');
   const [bodyFat, setBodyFat] = useState('');
   const [localHeight, setLocalHeight] = useState(userHeight?.toString() || '');
+  const [bio, setBio] = useState('');
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
+
+  React.useEffect(() => {
+    if (currentUser?.uid) {
+      const fetchBio = async () => {
+        const docSnap = await getDoc(doc(db, 'users', currentUser.uid));
+        if (docSnap.exists()) {
+          setBio(docSnap.data().bio || '');
+        }
+      };
+      fetchBio();
+    }
+  }, [currentUser]);
 
   const sortedMetrics = useMemo(() => {
     return [...bodyMetrics].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
@@ -96,30 +115,51 @@ export function Profile({
               <Ruler className="w-5 h-5 text-neon" /> Ma Taille
             </h2>
             <div className="space-y-4">
-              <div className="space-y-1">
-                <label className="text-[10px] text-gray-500 font-bold uppercase tracking-widest pl-1">Taille (cm)</label>
-                <div className="flex gap-2">
-                  <Input 
-                    type="number" 
-                    placeholder="Ex: 180"
-                    value={localHeight} 
-                    onChange={(e) => setLocalHeight(e.target.value)}
-                    className="font-mono flex-1"
-                  />
-                  <Button 
-                    variant="secondary" 
-                    size="sm" 
-                    onClick={() => {
-                      if (localHeight) onUpdateHeight(parseFloat(localHeight));
-                    }}
-                  >
-                    OK
-                  </Button>
-                </div>
+              <div className="flex gap-2 items-end">
+                <Input 
+                  label="Taille (cm)"
+                  type="number" 
+                  placeholder="Ex: 180"
+                  value={localHeight} 
+                  onChange={(e) => setLocalHeight(e.target.value)}
+                  className="font-mono flex-1"
+                />
+                <Button 
+                  variant="secondary" 
+                  size="md" 
+                  onClick={() => {
+                    if (localHeight) onUpdateHeight(parseFloat(localHeight));
+                  }}
+                  className="mb-[1px]"
+                >
+                  OK
+                </Button>
               </div>
               <p className="text-[9px] text-gray-600 uppercase tracking-wider italic">
                 Ta taille est enregistrée une fois pour calculer ton IMC.
               </p>
+            </div>
+          </Card>
+
+          {/* Bio Card */}
+          <Card className="p-6 bg-gradient-to-br from-dark-surface to-black/20">
+            <h2 className="text-xl text-white font-display uppercase tracking-tight flex items-center gap-2 mb-4">
+              <Activity className="w-5 h-5 text-neon" /> Bio & Slogan
+            </h2>
+            <div className="space-y-4">
+              <textarea 
+                value={bio}
+                onChange={(e) => setBio(e.target.value)}
+                className="w-full bg-black/30 border border-white/10 rounded-lg px-4 py-2 text-white placeholder:text-gray-600 focus:outline-none focus:border-neon/50 text-sm h-24 resize-none"
+                placeholder="Ta motivation en quelques mots..."
+              />
+              <Button 
+                variant="secondary" 
+                className="w-full"
+                onClick={() => onUpdateProfile({ bio })}
+              >
+                Mettre à jour ma bio
+              </Button>
             </div>
           </Card>
 
@@ -129,38 +169,32 @@ export function Profile({
               <Scale className="w-5 h-5 text-neon" /> Nouvelle Mesure
             </h2>
             <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="space-y-1">
-                <label className="text-[10px] text-gray-500 font-bold uppercase tracking-widest pl-1">Date</label>
-                <Input 
-                  type="date" 
-                  value={date} 
-                  onChange={(e) => setDate(e.target.value)} 
-                />
-              </div>
-              <div className="space-y-1">
-                <label className="text-[10px] text-gray-500 font-bold uppercase tracking-widest pl-1">Poids (kg)</label>
-                <Input 
-                  type="number" 
-                  step="0.1"
-                  placeholder="0.0"
-                  value={weight} 
-                  onChange={(e) => setWeight(e.target.value)}
-                  className="font-mono"
-                  required
-                />
-              </div>
-              <div className="space-y-1">
-                <label className="text-[10px] text-gray-500 font-bold uppercase tracking-widest pl-1">Graisse Corporelle (%)</label>
-                <Input 
-                  type="number" 
-                  step="0.1"
-                  placeholder="0.0"
-                  value={bodyFat} 
-                  onChange={(e) => setBodyFat(e.target.value)}
-                  className="font-mono"
-                />
-              </div>
-              <Button variant="neon" type="submit" className="w-full gap-2">
+              <Input 
+                label="Date de la mesure"
+                type="date" 
+                value={date} 
+                onChange={(e) => setDate(e.target.value)} 
+              />
+              <Input 
+                label="Poids corporel (kg)"
+                type="number" 
+                step="0.1"
+                placeholder="Ex: 82.5"
+                value={weight} 
+                onChange={(e) => setWeight(e.target.value)}
+                className="font-mono"
+                required
+              />
+              <Input 
+                label="Graisse Corporelle (%)"
+                type="number" 
+                step="0.1"
+                placeholder="Ex: 15.0"
+                value={bodyFat} 
+                onChange={(e) => setBodyFat(e.target.value)}
+                className="font-mono"
+              />
+              <Button variant="neon" type="submit" className="w-full gap-2 mt-2">
                 <Plus className="w-4 h-4" /> Enregistrer mesure
               </Button>
             </form>

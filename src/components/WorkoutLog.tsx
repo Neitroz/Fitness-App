@@ -16,7 +16,8 @@ import {
   Copy,
   CheckCircle2,
   Check,
-  Activity
+  Activity,
+  Share2
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
@@ -30,7 +31,8 @@ export function WorkoutLog({
   onUpdateWorkout, 
   onDeleteWorkout,
   currentWorkout,
-  setCurrentWorkout
+  setCurrentWorkout,
+  onToggleShare
 }: { 
   workouts: WorkoutSession[]; 
   exercises: Exercise[];
@@ -39,9 +41,18 @@ export function WorkoutLog({
   onDeleteWorkout: (id: string) => void;
   currentWorkout: WorkoutSession | null;
   setCurrentWorkout: (w: WorkoutSession | null) => void;
+  onToggleShare?: (id: string) => void;
 }) {
+  const [shareConfig, setShareConfig] = useState<{ id: string, name: string, isShared: boolean } | null>(null);
   const [isAddingEjercicio, setIsAddingEjercicio] = useState(false);
   const [searchEx, setSearchEx] = useState('');
+
+  const confirmShare = () => {
+    if (shareConfig && onToggleShare) {
+      onToggleShare(shareConfig.id);
+      setShareConfig(null);
+    }
+  };
 
   const currentMuscleVolume = useMemo(() => {
     if (!currentWorkout) return [];
@@ -210,6 +221,17 @@ export function WorkoutLog({
             <h2 className="text-xl text-white font-display">Modifier Séance</h2>
           </div>
           <div className="flex items-center gap-2">
+            {onToggleShare && (
+              <Button 
+                variant={currentWorkout.isShared ? "secondary" : "outline"} 
+                size="sm" 
+                className={cn("gap-2 px-3 sm:px-4", currentWorkout.isShared && "border-neon/30 text-neon")} 
+                onClick={() => onToggleShare(currentWorkout.id)}
+              >
+                <Share2 className="w-4 h-4" />
+                <span className="hidden sm:inline">{currentWorkout.isShared ? 'Partagé' : 'Partager'}</span>
+              </Button>
+            )}
             <Button variant="outline" size="sm" className="gap-2 px-3 sm:px-4" onClick={() => saveWorkout(false)}>
               <Save className="w-4 h-4" /> 
               <span className="hidden sm:inline">Sauvegarder</span>
@@ -223,21 +245,18 @@ export function WorkoutLog({
 
         <div className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-1">
-              <label className="text-xs font-bold text-gray-500 uppercase tracking-widest pl-1">Nom de séance</label>
-              <Input 
-                value={currentWorkout.name} 
-                onChange={(e) => setCurrentWorkout({ ...currentWorkout, name: e.target.value })} 
-              />
-            </div>
-            <div className="space-y-1">
-              <label className="text-xs font-bold text-gray-500 uppercase tracking-widest pl-1">Date</label>
-              <Input 
-                type="date"
-                value={format(new Date(currentWorkout.date), 'yyyy-MM-dd')}
-                onChange={(e) => setCurrentWorkout({ ...currentWorkout, date: new Date(e.target.value).toISOString() })} 
-              />
-            </div>
+            <Input 
+              label="Nom de la séance"
+              value={currentWorkout.name} 
+              onChange={(e) => setCurrentWorkout({ ...currentWorkout, name: e.target.value })} 
+              placeholder="Ex: Pecs & Triceps"
+            />
+            <Input 
+              label="Date de l'entraînement"
+              type="date"
+              value={format(new Date(currentWorkout.date), 'yyyy-MM-dd')}
+              onChange={(e) => setCurrentWorkout({ ...currentWorkout, date: new Date(e.target.value).toISOString() })} 
+            />
           </div>
 
           <div className="space-y-4">
@@ -311,11 +330,11 @@ export function WorkoutLog({
                                 <div className="flex items-center gap-1">
                                   <input 
                                     type="number" 
-                                    placeholder="0"
+                                    placeholder="Charge (kg)"
                                     value={set.weight === 0 ? '' : set.weight} 
                                     onFocus={(e) => e.target.select()}
                                     onChange={(e) => updateSet(entry.id, set.id, { weight: parseFloat(e.target.value) || 0 })}
-                                    className="w-16 bg-black/40 border border-white/5 rounded px-2 py-1 text-sm text-center font-mono"
+                                    className="w-20 bg-black/40 border border-white/5 rounded px-2 py-1 text-sm text-center font-mono placeholder:text-[10px] placeholder:text-gray-700"
                                   />
                                   <span className="text-[10px] text-gray-500 uppercase">kg</span>
                                 </div>
@@ -323,11 +342,11 @@ export function WorkoutLog({
                               <td className="px-4 py-3">
                                 <input 
                                   type="number" 
-                                  placeholder="0"
+                                  placeholder="Reps"
                                   value={set.reps === 0 ? '' : set.reps} 
                                   onFocus={(e) => e.target.select()}
                                   onChange={(e) => updateSet(entry.id, set.id, { reps: parseInt(e.target.value) || 0 })}
-                                  className="w-12 bg-black/40 border border-white/5 rounded px-2 py-1 text-sm text-center font-mono"
+                                  className="w-14 bg-black/40 border border-white/5 rounded px-2 py-1 text-sm text-center font-mono placeholder:text-[10px] placeholder:text-gray-700"
                                 />
                               </td>
                               <td className="px-4 py-3">
@@ -435,6 +454,57 @@ export function WorkoutLog({
           </Card>
         </div>
 
+        <Modal 
+          isOpen={!!shareConfig} 
+          onClose={() => setShareConfig(null)} 
+          title={shareConfig?.isShared ? "Retirer du flux" : "Partager l'Entraînement"}
+        >
+          <div className="space-y-6">
+            <div className="flex flex-col items-center text-center gap-4 py-4">
+              <div className={cn(
+                "w-16 h-16 rounded-full flex items-center justify-center",
+                shareConfig?.isShared ? "bg-red-500/10 text-red-500" : "bg-neon/10 text-neon"
+              )}>
+                <Share2 className="w-8 h-8" />
+              </div>
+              <div>
+                <h3 className="text-xl text-white font-display uppercase tracking-tight">
+                  {shareConfig?.isShared ? "Confirmer le retrait ?" : "Prêt à partager ton impact ?"}
+                </h3>
+                <p className="text-sm text-gray-400 mt-1 max-w-xs">
+                  {shareConfig?.isShared 
+                    ? `Cette séance ne sera plus visible par les autres membres de la communauté.` 
+                    : `La séance "${shareConfig?.name}" sera publiée sur le flux communautaire. Tout le monde pourra voir tes performances.`}
+                </p>
+              </div>
+            </div>
+
+            <div className="flex flex-col gap-3">
+              <Button 
+                variant={shareConfig?.isShared ? 'danger' : 'neon'} 
+                className="w-full h-12 text-sm uppercase tracking-widest font-bold"
+                onClick={confirmShare}
+              >
+                {shareConfig?.isShared ? "Retirer maintenant" : "Publier sur le flux"}
+              </Button>
+              <Button 
+                variant="secondary" 
+                className="w-full text-[10px] uppercase tracking-widest"
+                onClick={() => setShareConfig(null)}
+              >
+                Annuler
+              </Button>
+            </div>
+            
+            {!shareConfig?.isShared && (
+               <div className="bg-black/40 p-3 rounded-lg border border-white/5">
+                  <p className="text-[9px] text-gray-500 font-bold uppercase tracking-[0.2em] mb-1">Impact Social</p>
+                  <p className="text-[10px] text-gray-600 italic">En partageant, tu inspires les autres athlètes et tu gagnes en visibilité dans le classement communal.</p>
+               </div>
+            )}
+          </div>
+        </Modal>
+
         <Modal isOpen={isAddingEjercicio} onClose={() => setIsAddingEjercicio(false)} title="Sélectionner un exercice">
           <div className="space-y-4">
             <Input 
@@ -519,11 +589,25 @@ export function WorkoutLog({
                   <div className="flex flex-wrap gap-2 pt-1">
                     <Badge variant="gray">{w.entries.length} Exercices</Badge>
                     <Badge variant="gray">{totalEffectiveSets} {totalEffectiveSets > 1 ? 'Séries' : 'Série'}</Badge>
-                    <Badge variant="gray">{volume.toLocaleString()}kg Volume</Badge>
                   </div>
                 </div>
                 
                 <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
+                  <button 
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setShareConfig({ id: w.id, name: w.name, isShared: !!w.isShared });
+                    }}
+                    className={cn(
+                      "p-2 rounded-lg transition-all",
+                      w.isShared 
+                        ? "bg-neon/10 text-neon border border-neon/30" 
+                        : "bg-white/5 text-gray-600 border border-white/5 hover:border-gray-500"
+                    )}
+                    title={w.isShared ? 'Partagé' : 'Partager'}
+                  >
+                    <Share2 className="w-5 h-5" />
+                  </button>
                   <button 
                     onClick={(e) => toggleWorkoutStatus(e, w)}
                     className={cn(

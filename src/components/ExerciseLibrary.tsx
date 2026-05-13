@@ -162,20 +162,23 @@ export function ExerciseLibrary({
         title={editingEx ? "Modifier l'exercice" : "Créer un exercice"}
       >
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="space-y-1">
-            <label className="text-xs font-bold text-gray-500 uppercase tracking-widest pl-1">Nom</label>
-            <Input name="name" defaultValue={editingEx?.name} required placeholder="ex: Développé couché" />
-          </div>
+          <Input 
+            label="Nom de l'exercice"
+            name="name" 
+            defaultValue={editingEx?.name} 
+            required 
+            placeholder="ex: Développé couché" 
+          />
 
           <div className="space-y-2">
-            <label className="text-xs font-bold text-gray-500 uppercase tracking-widest pl-1 block">Groupes Musculaires</label>
+            <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest pl-1 block">Groupes Musculaires</label>
             <div className="flex flex-wrap gap-2">
               {MUSCLE_GROUPS.map(mg => (
                 <button
                   key={mg}
                   type="button"
                   onClick={() => toggleMuscle(mg)}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider transition-all border ${selectedMuscles.includes(mg) ? 'bg-neon/10 border-neon text-neon' : 'bg-black/20 border-white/10 text-gray-500 hover:border-white/30'}`}
+                  className={`px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all border ${selectedMuscles.includes(mg) ? 'bg-neon/10 border-neon text-neon' : 'bg-black/20 border-white/10 text-gray-500 hover:border-white/30'}`}
                 >
                   {mg}
                 </button>
@@ -183,29 +186,32 @@ export function ExerciseLibrary({
             </div>
             <div className="flex gap-2">
               <Input 
+                label="Muscle personnalisé"
                 value={customMuscle}
                 onChange={(e) => setCustomMuscle(e.target.value)}
                 placeholder="Ajouter un autre muscle..."
-                className="h-8 text-xs h-9"
+                className="h-9"
               />
             </div>
           </div>
 
-          <div className="space-y-1">
-            <label className="text-xs font-bold text-gray-500 uppercase tracking-widest pl-1">Description</label>
+          <div className="space-y-1.5">
+            <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest pl-1">Description & Techniques</label>
             <textarea 
               name="description" 
               defaultValue={editingEx?.description}
               rows={3} 
-              className="w-full bg-black/30 border border-white/10 rounded-lg px-4 py-2.5 text-white placeholder:text-gray-600 focus:outline-none focus:border-neon/50 transition-all font-sans"
-              placeholder="Notes techniques..."
+              className="w-full bg-black/30 border border-white/10 rounded-lg px-4 py-2.5 text-white placeholder:text-gray-600 focus:outline-none focus:border-neon/50 transition-all font-sans text-sm"
+              placeholder="Ex: Garder les coudes à 45 degrés, descendre jusqu'au torse..."
             />
           </div>
 
-          <div className="space-y-1">
-            <label className="text-xs font-bold text-gray-500 uppercase tracking-widest pl-1">URL Image (Optionnel)</label>
-            <Input name="imageUrl" defaultValue={editingEx?.imageUrl || ''} placeholder="https://..." />
-          </div>
+          <Input 
+            label="Lien vers une image ou un GIF (Optionnel)"
+            name="imageUrl" 
+            defaultValue={editingEx?.imageUrl || ''} 
+            placeholder="https://imgur.com/..." 
+          />
 
           <div className="flex items-center gap-3 py-2">
             <input 
