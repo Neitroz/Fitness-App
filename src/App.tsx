@@ -116,6 +116,8 @@ export default function App() {
         return (
           <Profile 
             bodyMetrics={store.bodyMetrics}
+            userHeight={store.userHeight}
+            onUpdateHeight={store.setUserHeight}
             onAddMetric={store.addBodyMetric}
             onDeleteMetric={store.deleteBodyMetric}
           />

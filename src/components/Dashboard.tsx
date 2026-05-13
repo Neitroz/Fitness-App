@@ -20,7 +20,7 @@ export function Dashboard({
   const last7Days = useMemo(() => {
     const now = new Date();
     const start = subDays(now, 7);
-    return workouts.filter(w => isWithinInterval(new Date(w.date), { start, end: now }));
+    return workouts.filter(w => w.status === 'completed' && isWithinInterval(new Date(w.date), { start, end: now }));
   }, [workouts]);
 
   const stats = useMemo(() => {
@@ -34,7 +34,7 @@ export function Dashboard({
     };
   }, [last7Days]);
 
-  const lastWorkout = workouts[0];
+  const lastWorkout = workouts.find(w => w.status === 'completed');
 
   const weightStats = useMemo(() => {
     if (!bodyMetrics || bodyMetrics.length === 0) return null;
@@ -69,7 +69,7 @@ export function Dashboard({
     for (let i = 29; i >= 0; i--) {
       const date = subDays(now, i);
       const dayKey = format(date, 'yyyy-MM-dd');
-      const count = workouts.filter(w => format(new Date(w.date), 'yyyy-MM-dd') === dayKey).length;
+      const count = workouts.filter(w => w.status === 'completed' && format(new Date(w.date), 'yyyy-MM-dd') === dayKey).length;
       data.push({
         name: format(date, 'dd/MM'),
         count,

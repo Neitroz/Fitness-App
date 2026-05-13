@@ -36,6 +36,7 @@ export interface WorkoutSession {
   date: string;
   name: string;
   notes?: string;
+  status?: 'draft' | 'completed';
   entries: WorkoutEntry[];
 }
 
@@ -43,7 +44,6 @@ export interface BodyMetric {
   id: string;
   date: string;
   weight: number;
-  height?: number;
   bodyFat?: number;
 }
 

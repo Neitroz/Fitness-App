@@ -27,16 +27,20 @@ import { format } from 'date-fns';
 
 export function Profile({ 
   bodyMetrics, 
+  userHeight,
+  onUpdateHeight,
   onAddMetric, 
   onDeleteMetric 
 }: { 
   bodyMetrics: BodyMetric[];
+  userHeight: number | null;
+  onUpdateHeight: (height: number) => void;
   onAddMetric: (metric: BodyMetric) => void;
   onDeleteMetric: (id: string) => void;
 }) {
   const [weight, setWeight] = useState('');
-  const [height, setHeight] = useState('');
   const [bodyFat, setBodyFat] = useState('');
+  const [localHeight, setLocalHeight] = useState(userHeight?.toString() || '');
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
 
   const sortedMetrics = useMemo(() => {
@@ -58,8 +62,8 @@ export function Profile({
     
     // BMI = weight (kg) / height^2 (m)
     let bmi = null;
-    if (latest.weight && latest.height) {
-      bmi = Number((latest.weight / Math.pow(latest.height / 100, 2)).toFixed(1));
+    if (latest.weight && userHeight) {
+      bmi = Number((latest.weight / Math.pow(userHeight / 100, 2)).toFixed(1));
     }
 
     return { latest, diff, bmi };
@@ -73,13 +77,11 @@ export function Profile({
       id: crypto.randomUUID(),
       date,
       weight: parseFloat(weight),
-      height: height ? parseFloat(height) : undefined,
       bodyFat: bodyFat ? parseFloat(bodyFat) : undefined,
     });
 
     setWeight('');
     setBodyFat('');
-    // Leave height as it's usually static
   };
 
   return (
@@ -87,21 +89,54 @@ export function Profile({
       <h1 className="text-4xl text-white bebas tracking-wider">Profil & Poids</h1>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Input Card */}
-        <Card className="p-6 h-fit bg-gradient-to-br from-dark-surface to-black/20">
-          <h2 className="text-xl text-white font-display uppercase tracking-tight flex items-center gap-2 mb-6">
-            <Scale className="w-5 h-5 text-neon" /> Nouvelle Mesure
-          </h2>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="space-y-1">
-              <label className="text-[10px] text-gray-500 font-bold uppercase tracking-widest pl-1">Date</label>
-              <Input 
-                type="date" 
-                value={date} 
-                onChange={(e) => setDate(e.target.value)} 
-              />
+        <div className="space-y-6">
+          {/* Global Height Card */}
+          <Card className="p-6 bg-gradient-to-br from-dark-surface to-black/20">
+            <h2 className="text-xl text-white font-display uppercase tracking-tight flex items-center gap-2 mb-4">
+              <Ruler className="w-5 h-5 text-neon" /> Ma Taille
+            </h2>
+            <div className="space-y-4">
+              <div className="space-y-1">
+                <label className="text-[10px] text-gray-500 font-bold uppercase tracking-widest pl-1">Taille (cm)</label>
+                <div className="flex gap-2">
+                  <Input 
+                    type="number" 
+                    placeholder="Ex: 180"
+                    value={localHeight} 
+                    onChange={(e) => setLocalHeight(e.target.value)}
+                    className="font-mono flex-1"
+                  />
+                  <Button 
+                    variant="secondary" 
+                    size="sm" 
+                    onClick={() => {
+                      if (localHeight) onUpdateHeight(parseFloat(localHeight));
+                    }}
+                  >
+                    OK
+                  </Button>
+                </div>
+              </div>
+              <p className="text-[9px] text-gray-600 uppercase tracking-wider italic">
+                Ta taille est enregistrée une fois pour calculer ton IMC.
+              </p>
             </div>
-            <div className="grid grid-cols-2 gap-4">
+          </Card>
+
+          {/* Input Card */}
+          <Card className="p-6 h-fit bg-gradient-to-br from-dark-surface to-black/20">
+            <h2 className="text-xl text-white font-display uppercase tracking-tight flex items-center gap-2 mb-6">
+              <Scale className="w-5 h-5 text-neon" /> Nouvelle Mesure
+            </h2>
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div className="space-y-1">
+                <label className="text-[10px] text-gray-500 font-bold uppercase tracking-widest pl-1">Date</label>
+                <Input 
+                  type="date" 
+                  value={date} 
+                  onChange={(e) => setDate(e.target.value)} 
+                />
+              </div>
               <div className="space-y-1">
                 <label className="text-[10px] text-gray-500 font-bold uppercase tracking-widest pl-1">Poids (kg)</label>
                 <Input 
@@ -115,32 +150,22 @@ export function Profile({
                 />
               </div>
               <div className="space-y-1">
-                <label className="text-[10px] text-gray-500 font-bold uppercase tracking-widest pl-1">Taille (cm)</label>
+                <label className="text-[10px] text-gray-500 font-bold uppercase tracking-widest pl-1">Graisse Corporelle (%)</label>
                 <Input 
                   type="number" 
-                  placeholder="0"
-                  value={height} 
-                  onChange={(e) => setHeight(e.target.value)}
+                  step="0.1"
+                  placeholder="0.0"
+                  value={bodyFat} 
+                  onChange={(e) => setBodyFat(e.target.value)}
                   className="font-mono"
                 />
               </div>
-            </div>
-            <div className="space-y-1">
-              <label className="text-[10px] text-gray-500 font-bold uppercase tracking-widest pl-1">Graisse Corporelle (%)</label>
-              <Input 
-                type="number" 
-                step="0.1"
-                placeholder="0.0"
-                value={bodyFat} 
-                onChange={(e) => setBodyFat(e.target.value)}
-                className="font-mono"
-              />
-            </div>
-            <Button variant="neon" type="submit" className="w-full gap-2">
-              <Plus className="w-4 h-4" /> Enregistrer mesurant
-            </Button>
-          </form>
-        </Card>
+              <Button variant="neon" type="submit" className="w-full gap-2">
+                <Plus className="w-4 h-4" /> Enregistrer mesure
+              </Button>
+            </form>
+          </Card>
+        </div>
 
         {/* Stats & Chart */}
         <div className="lg:col-span-2 space-y-6">

@@ -51,7 +51,7 @@ export function Analytics({
     const ex = exercises.find(e => e.id === selectedExId);
     
     return workouts
-      .filter(w => isAfter(new Date(w.date), cutoff))
+      .filter(w => w.status === 'completed' && isAfter(new Date(w.date), cutoff))
       .map(w => {
         const entry = w.entries.find(e => e.exerciseId === selectedExId);
         if (!entry) return null;
@@ -80,7 +80,7 @@ export function Analytics({
 
   const muscleDistribution = useMemo(() => {
     const counts: Record<string, number> = {};
-    workouts.forEach(w => {
+    workouts.filter(w => w.status === 'completed').forEach(w => {
       w.entries.forEach(e => {
         const ex = exercises.find(ex => ex.id === e.exerciseId);
         if (ex) {
@@ -97,7 +97,7 @@ export function Analytics({
     const counts: Record<string, number> = {};
     const sevenDaysAgo = subDays(new Date(), 7);
     
-    workouts.filter(w => isAfter(new Date(w.date), sevenDaysAgo)).forEach(w => {
+    workouts.filter(w => w.status === 'completed' && isAfter(new Date(w.date), sevenDaysAgo)).forEach(w => {
       w.entries.forEach(e => {
         const ex = exercises.find(ex => ex.id === e.exerciseId);
         if (ex) {
@@ -144,7 +144,7 @@ export function Analytics({
     // 1RM Estimate (Epley): 1RM = weight * (1 + reps / 30)
     // For simplicity, we just use the max PR set
     let best1RM = 0;
-    workouts.forEach(w => {
+    workouts.filter(w => w.status === 'completed').forEach(w => {
       w.entries.forEach(e => {
         if (e.exerciseId === selectedExId) {
           e.sets.forEach(s => {
@@ -418,20 +418,20 @@ export function Analytics({
         <Card className="p-6 flex flex-col justify-center items-center text-center">
             <CalIcon className="w-12 h-12 text-neon mb-4 opacity-20" />
             <h3 className="text-xl text-white bebas tracking-widest mb-1">Activité Totale</h3>
-            <p className="text-4xl text-neon font-mono mb-4">{workouts.length}</p>
-            <p className="text-xs text-gray-500 uppercase font-bold tracking-widest">Séances Enregistrées</p>
+            <p className="text-4xl text-neon font-mono mb-4">{workouts.filter(w => w.status === 'completed').length}</p>
+            <p className="text-xs text-gray-500 uppercase font-bold tracking-widest">Séances Enregistrées Validées</p>
             
             <div className="mt-8 grid grid-cols-2 gap-8 w-full border-t border-white/5 pt-8">
                 <div>
                    <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest mb-1">Séries Totales</p>
                    <p className="text-2xl text-white font-mono">
-                    {workouts.reduce((acc, w) => acc + w.entries.reduce((acc2, e) => acc2 + e.sets.length, 0), 0)}
+                    {workouts.filter(w => w.status === 'completed').reduce((acc, w) => acc + w.entries.reduce((acc2, e) => acc2 + e.sets.length, 0), 0)}
                    </p>
                 </div>
                 <div>
                    <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest mb-1">Record de Séance</p>
                    <p className="text-2xl text-white font-mono">
-                    {Math.max(...workouts.map(w => w.entries.reduce((acc, e) => acc + e.sets.reduce((acc2, s) => acc2 + (s.weight * s.reps), 0), 0))).toLocaleString()}kg
+                    {Math.max(0, ...workouts.filter(w => w.status === 'completed').map(w => w.entries.reduce((acc, e) => acc + e.sets.reduce((acc2, s) => acc2 + (s.weight * s.reps), 0), 0))).toLocaleString()}kg
                    </p>
                 </div>
             </div>

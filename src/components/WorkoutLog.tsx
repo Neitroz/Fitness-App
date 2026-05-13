@@ -13,7 +13,9 @@ import {
   ArrowBigUpDash,
   Save,
   X,
-  Copy
+  Copy,
+  CheckCircle2,
+  Check
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
@@ -59,11 +61,20 @@ export function WorkoutLog({
       id: uuidv4(),
       date: new Date().toISOString(),
       name: `${oldW.name} (Copie)`,
+      status: 'draft',
       entries: oldW.entries.map(e => ({
         ...e,
         id: uuidv4(),
         sets: e.sets.map(s => ({ ...s, id: uuidv4() }))
       }))
+    });
+  };
+
+  const toggleWorkoutStatus = (e: React.MouseEvent, workout: WorkoutSession) => {
+    e.stopPropagation();
+    onUpdateWorkout({
+      ...workout,
+      status: workout.status === 'completed' ? 'draft' : 'completed'
     });
   };
 
@@ -155,13 +166,17 @@ export function WorkoutLog({
     });
   };
 
-  const saveWorkout = () => {
+  const saveWorkout = (completed = false) => {
     if (!currentWorkout) return;
-    const isExisting = workouts.find(w => w.id === currentWorkout.id);
+    const finalWorkout = { 
+      ...currentWorkout, 
+      status: completed ? 'completed' as const : (currentWorkout.status || 'draft' as const) 
+    };
+    const isExisting = workouts.find(w => w.id === finalWorkout.id);
     if (isExisting) {
-      onUpdateWorkout(currentWorkout);
+      onUpdateWorkout(finalWorkout);
     } else {
-      onAddWorkout(currentWorkout);
+      onAddWorkout(finalWorkout);
     }
     setCurrentWorkout(null);
   };
@@ -176,9 +191,14 @@ export function WorkoutLog({
             </button>
             <h2 className="text-xl text-white font-display">Modifier Séance</h2>
           </div>
-          <Button variant="neon" size="sm" className="gap-2" onClick={saveWorkout}>
-            <Save className="w-4 h-4" /> Sauvegarder
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button variant="outline" size="sm" className="hidden sm:flex gap-2" onClick={() => saveWorkout(false)}>
+              <Save className="w-4 h-4" /> Sauvegarder
+            </Button>
+            <Button variant="neon" size="sm" className="gap-2" onClick={() => saveWorkout(true)}>
+              <CheckCircle2 className="w-4 h-4" /> Finir la séance
+            </Button>
+          </div>
         </div>
 
         <div className="space-y-6">
@@ -405,13 +425,27 @@ export function WorkoutLog({
           }, 0);
 
           return (
-            <Card key={w.id} className="group hover:border-neon/20 transition-all">
+            <Card 
+              key={w.id} 
+              className="group hover:border-neon/20 transition-all cursor-pointer relative overflow-hidden"
+              onClick={() => setCurrentWorkout(w)}
+            >
+              {w.status === 'completed' && (
+                <div className="absolute top-0 right-0 w-12 h-12 flex items-center justify-center translate-x-4 -translate-y-4 rotate-45 bg-neon/10 border-b border-neon/30">
+                  <Check className="w-3 h-3 text-neon -rotate-45 translate-y-2 -translate-x-2" />
+                </div>
+              )}
               <div className="p-4 md:p-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div className="space-y-2">
                   <div className="flex items-center gap-2">
                     <Calendar className="w-4 h-4 text-sport-orange" />
-                    <span className="text-xs text-gray-500 font-bold uppercase tracking-widest">
+                    <span className="text-xs text-gray-500 font-bold uppercase tracking-widest flex items-center gap-2">
                       {format(new Date(w.date), 'EEEE dd MMMM yyyy', { locale: fr })}
+                      {w.status === 'completed' && (
+                        <Badge variant="neon" className="py-0 h-4 flex items-center gap-1">
+                          <Check className="w-3 h-3" /> Validée
+                        </Badge>
+                      )}
                     </span>
                   </div>
                   <h3 className="text-2xl text-white font-display uppercase group-hover:text-neon transition-colors">{w.name}</h3>
@@ -421,12 +455,21 @@ export function WorkoutLog({
                   </div>
                 </div>
                 
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
+                  <button 
+                    onClick={(e) => toggleWorkoutStatus(e, w)}
+                    className={cn(
+                      "p-2 rounded-lg transition-all",
+                      w.status === 'completed' 
+                        ? "bg-neon/10 text-neon border border-neon/30" 
+                        : "bg-white/5 text-gray-600 border border-white/5 hover:border-gray-500"
+                    )}
+                    title={w.status === 'completed' ? 'Marquer comme brouillon' : 'Valider la séance'}
+                  >
+                    <CheckCircle2 className="w-5 h-5" />
+                  </button>
                   <Button variant="secondary" size="sm" className="gap-2" onClick={() => handleCopyWorkout(w)}>
                     <Copy className="w-4 h-4" /> Copier
-                  </Button>
-                  <Button variant="outline" size="sm" onClick={() => setCurrentWorkout(w)}>
-                    Modifier
                   </Button>
                   <button 
                     onClick={() => { if(confirm('Supprimer cette séance ?')) onDeleteWorkout(w.id); }}
@@ -434,6 +477,7 @@ export function WorkoutLog({
                   >
                     <Trash2 className="w-5 h-5" />
                   </button>
+                  <ChevronRight className="w-5 h-5 text-gray-800 group-hover:text-neon transition-colors" />
                 </div>
               </div>
             </Card>

@@ -6,6 +6,7 @@ export function useWorkoutStore() {
   const [exercises, setExercises] = useState<Exercise[]>([]);
   const [workouts, setWorkouts] = useState<WorkoutSession[]>([]);
   const [bodyMetrics, setBodyMetrics] = useState<BodyMetric[]>([]);
+  const [userHeight, setUserHeight] = useState<number | null>(null);
   const [volumeTargets, setVolumeTargets] = useState<VolumeTargets>({});
   const [unit, setUnit] = useState<'kg' | 'lbs'>('kg');
   const [isLoaded, setIsLoaded] = useState(false);
@@ -32,6 +33,7 @@ export function useWorkoutStore() {
     const storedExercises = localStorage.getItem('ironflow_exercises');
     const storedWorkouts = localStorage.getItem('ironflow_workouts');
     const storedBodyMetrics = localStorage.getItem('ironflow_body_metrics');
+    const storedHeight = localStorage.getItem('ironflow_height');
     const storedVolumeTargets = localStorage.getItem('ironflow_volume_targets');
     const storedUnit = localStorage.getItem('ironflow_unit');
 
@@ -49,16 +51,10 @@ export function useWorkoutStore() {
 
     if (storedBodyMetrics) {
       setBodyMetrics(JSON.parse(storedBodyMetrics));
-    } else {
-      // Default initial metric
-      const initialMetric = {
-        id: 'initial-metric',
-        date: new Date().toISOString().split('T')[0],
-        weight: 75,
-        height: 180,
-        bodyFat: 15
-      };
-      setBodyMetrics([initialMetric]);
+    }
+
+    if (storedHeight) {
+      setUserHeight(parseFloat(storedHeight));
     }
 
     if (storedVolumeTargets) {
@@ -89,6 +85,12 @@ export function useWorkoutStore() {
       localStorage.setItem('ironflow_body_metrics', JSON.stringify(bodyMetrics));
     }
   }, [bodyMetrics, isLoaded]);
+
+  useEffect(() => {
+    if (isLoaded && userHeight !== null) {
+      localStorage.setItem('ironflow_height', userHeight.toString());
+    }
+  }, [userHeight, isLoaded]);
 
   useEffect(() => {
     if (isLoaded) {
@@ -182,9 +184,11 @@ export function useWorkoutStore() {
     exercises,
     workouts,
     bodyMetrics,
+    userHeight,
     volumeTargets,
     unit,
     setUnit,
+    setUserHeight,
     addExercise,
     updateExercise,
     deleteExercise,
