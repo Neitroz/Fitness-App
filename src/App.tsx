@@ -16,8 +16,6 @@ import { WorkoutLog } from './components/WorkoutLog';
 import { Analytics } from './components/Analytics';
 import { Awards } from './components/Awards';
 import { Profile } from './components/Profile';
-import { Auth } from './components/Auth';
-import { Community } from './components/Community';
 import { Button, Card, Modal, Input, Badge } from './components/UI';
 import { 
   LayoutDashboard, 
@@ -26,19 +24,17 @@ import {
   BarChart3, 
   Trophy,
   User,
-  Users,
+  Settings, 
+  Download, 
+  Upload, 
   ShieldCheck,
-  Settings,
-  Download,
-  Upload,
   Trash2,
   Menu,
-  X,
-  Lock
+  X
 } from 'lucide-react';
 import { Exercise } from './types';
 
-type View = 'dashboard' | 'exercises' | 'workouts' | 'analytics' | 'awards' | 'profile' | 'community' | 'settings';
+type View = 'dashboard' | 'exercises' | 'workouts' | 'analytics' | 'awards' | 'profile' | 'settings';
 
 export default function App() {
   const store = useWorkoutStore();
@@ -47,12 +43,12 @@ export default function App() {
   const [selectedExercise, setSelectedExercise] = useState<Exercise | null>(null);
   const [currentWorkout, setCurrentWorkout] = useState<any>(null);
 
-  if (!store.isLoaded || store.isAuthLoading) {
+  if (!store.isLoaded) {
     return (
       <div className="min-h-screen bg-dark-bg flex items-center justify-center">
         <div className="flex flex-col items-center gap-4">
           <div className="w-16 h-16 border-4 border-neon border-t-transparent rounded-full animate-spin"></div>
-          <p className="text-neon font-display text-xl uppercase tracking-widest animate-pulse">Synchronisation...</p>
+          <p className="text-neon font-display text-xl uppercase tracking-widest animate-pulse">Track&W...</p>
         </div>
       </div>
     );
@@ -63,8 +59,7 @@ export default function App() {
     { id: 'exercises' as View, label: 'Exercices', icon: Dumbbell },
     { id: 'workouts' as View, label: 'Séances', icon: ClipboardList },
     { id: 'awards' as View, label: 'Records & Badges', icon: Trophy },
-    { id: 'community' as View, label: 'Communauté', icon: Users },
-    { id: 'profile' as View, label: 'Profil & Auth', icon: User },
+    { id: 'profile' as View, label: 'Profil & Poids', icon: User },
     { id: 'analytics' as View, label: 'Analyses', icon: BarChart3 },
     { id: 'settings' as View, label: 'Paramètres', icon: Settings },
   ];
@@ -98,14 +93,13 @@ export default function App() {
       case 'workouts':
         return (
           <WorkoutLog 
-            workouts={store.workouts} 
+            workouts={store.workouts}
             exercises={store.exercises}
             onAddWorkout={store.addWorkout}
             onUpdateWorkout={store.updateWorkout}
             onDeleteWorkout={store.deleteWorkout}
             currentWorkout={currentWorkout}
             setCurrentWorkout={setCurrentWorkout}
-            onToggleShare={store.toggleWorkoutShare}
           />
         );
       case 'analytics':
@@ -125,47 +119,18 @@ export default function App() {
             manualPRs={store.manualPRs}
             bodyMetrics={store.bodyMetrics}
             onUpdatePR={store.updateManualPR}
-            onToggleShare={store.togglePRShare}
           />
         );
       case 'profile':
         return (
-          <div className="space-y-8 max-w-4xl mx-auto">
-            <h1 className="text-4xl text-white bebas tracking-wider italic">Mon Profil & Identité</h1>
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-              <div className="lg:col-span-1">
-                <Auth user={store.currentUser} />
-              </div>
-              <div className="lg:col-span-2">
-                <Profile 
-                  bodyMetrics={store.bodyMetrics}
-                  userHeight={store.userHeight}
-                  onUpdateHeight={store.setUserHeight}
-                  onAddMetric={store.addBodyMetric}
-                  onDeleteMetric={store.deleteBodyMetric}
-                  onUpdateProfile={store.updateProfile}
-                  currentUser={store.currentUser}
-                />
-              </div>
-            </div>
-          </div>
+          <Profile 
+            bodyMetrics={store.bodyMetrics}
+            userHeight={store.userHeight}
+            onUpdateHeight={store.setUserHeight}
+            onAddMetric={store.addBodyMetric}
+            onDeleteMetric={store.deleteBodyMetric}
+          />
         );
-      case 'community':
-        if (!store.currentUser) {
-          return (
-            <div className="flex flex-col items-center justify-center p-12 text-center space-y-6">
-              <div className="w-16 h-16 bg-white/5 rounded-full flex items-center justify-center border border-white/10">
-                <Lock className="w-8 h-8 text-gray-700" />
-              </div>
-              <div className="space-y-2">
-                <h3 className="text-2xl text-white font-display italic uppercase">Contenu Privé</h3>
-                <p className="text-sm text-gray-500 max-w-xs">Connecte-toi pour rejoindre la meute et voir les records des autres athlètes.</p>
-              </div>
-              <Button variant="neon" onClick={() => setCurrentView('profile')}>Rejoindre la communauté</Button>
-            </div>
-          );
-        }
-        return <Community currentUser={store.currentUser} />;
       case 'settings':
         return (
           <div className="space-y-6 animate-in fade-in duration-500 max-w-2xl">
@@ -234,27 +199,10 @@ export default function App() {
                 </div>
               </div>
 
-              {store.currentUser && (
-                <div className="space-y-4 border-t border-white/5 pt-8">
-                  <h3 className="text-lg text-white uppercase tracking-tight">Synchronisation Cloud</h3>
-                  <div className="p-4 bg-neon/5 border border-neon/10 rounded-xl flex items-center justify-between gap-4">
-                    <div className="space-y-1">
-                      <p className="text-xs text-white font-bold uppercase tracking-widest">Sauvegarde Cloud activée</p>
-                      <p className="text-[10px] text-gray-500">Tes records sont automatiquement partagés avec la communauté.</p>
-                    </div>
-                    <Button variant="neon" size="sm" onClick={store.syncDataToCloud}>Synchroniser maintenant</Button>
-                  </div>
-                </div>
-              )}
-
               <div className="pt-8 border-t border-white/5">
                 <div className="flex items-center gap-3 text-gray-600 bg-black/20 p-4 rounded-xl border border-white/5">
                   <ShieldCheck className="w-5 h-5 text-neon" />
-                  <p className="text-xs">
-                    {store.currentUser 
-                      ? "Tes données sont synchronisées en toute sécurité avec ton compte cloud et stockées localement pour un accès hors-ligne." 
-                      : "Tes données sont actuellement stockées uniquement sur cet appareil. Connecte-toi pour les sauvegarder dans le cloud."}
-                  </p>
+                  <p className="text-xs">Tes données restent locales sur cet appareil. Track&W ne stocke aucune donnée sur ses serveurs.</p>
                 </div>
               </div>
             </Card>
@@ -314,30 +262,10 @@ export default function App() {
           ))}
         </div>
 
-        <div className="mt-auto pt-10 pb-4">
-          <Card className="p-4 bg-gradient-to-br from-neon/10 to-transparent border-neon/10 relative overflow-hidden group">
-            <div className="absolute top-0 right-0 p-2 opacity-10 group-hover:scale-110 transition-transform">
-               <ShieldCheck className="w-12 h-12 text-neon" />
-            </div>
-            <div className="flex justify-between items-center mb-1 relative z-10">
-              <p className="text-[10px] font-bold text-neon uppercase tracking-tighter">Niveau Athlète</p>
-              <Badge variant="neon" className="text-[10px] h-5 font-mono px-2">LVL {store.userLevel}</Badge>
-            </div>
-            <p className="text-white font-display text-lg uppercase leading-tight italic relative z-10">
-              {store.userLevel < 5 ? 'Novice d\'Acier' : store.userLevel < 15 ? 'Guerrier du Fonte' : 'Alpha de la Meute'}
-            </p>
-            <div className="mt-3 relative z-10">
-               <div className="flex justify-between items-end mb-1">
-                  <span className="text-[8px] text-gray-500 font-bold uppercase tracking-widest">Progression XP</span>
-                  <span className="text-[8px] text-neon font-mono uppercase tracking-widest">{store.xp % 500} / 500</span>
-               </div>
-               <div className="w-full h-1.5 bg-black/40 rounded-full overflow-hidden border border-white/5">
-                  <div 
-                    className="h-full bg-neon shadow-[0_0_10px_rgba(232,255,11,0.5)] transition-all duration-1000" 
-                    style={{ width: `${(store.xp % 500) / 500 * 100}%` }} 
-                  />
-               </div>
-            </div>
+        <div className="mt-auto pt-10">
+          <Card className="p-4 bg-gradient-to-br from-sport-orange/20 to-transparent border-sport-orange/10">
+            <p className="text-[10px] font-bold text-sport-orange uppercase tracking-tighter mb-1">Status Athlète</p>
+            <p className="text-white font-display text-lg uppercase leading-tight">Prêt à pousser</p>
           </Card>
         </div>
       </nav>

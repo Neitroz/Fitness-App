@@ -1,6 +1,6 @@
 
 import React, { useMemo, useState } from 'react';
-import { Trophy, Medal, Award, Star, TrendingUp, Info, Plus, Edit2, Scale, Share2 } from 'lucide-react';
+import { Trophy, Medal, Award, Star, TrendingUp, Info, Plus, Edit2, Scale } from 'lucide-react';
 import { Card, Badge, Modal, Input, Button } from './UI';
 import { WorkoutSession, Exercise, ManualPR } from '../types';
 
@@ -10,7 +10,6 @@ interface AwardsProps {
   manualPRs: ManualPR[];
   bodyMetrics?: any[];
   onUpdatePR: (pr: ManualPR) => void;
-  onToggleShare?: (prId: string) => void;
 }
 
 interface BadgeLevel {
@@ -42,7 +41,7 @@ const BADGE_LEVELS: Record<string, BadgeLevel[]> = {
     { label: 'Platine', threshold: 220, color: '#e5e4e2', icon: <Trophy className="w-6 h-6" /> },
     { label: 'Diamant', threshold: 260, color: '#b9f2ff', icon: <Trophy className="w-6 h-6" /> },
   ],
-  'Développé Haltères (Épaules)': [
+  'Développé Haltères': [
     { label: 'Bronze', threshold: 20, color: '#cd7f32', icon: <Medal className="w-6 h-6" /> },
     { label: 'Argent', threshold: 30, color: '#c0c0c0', icon: <Medal className="w-6 h-6" /> },
     { label: 'Or', threshold: 40, color: '#ffd700', icon: <Medal className="w-6 h-6" /> },
@@ -84,7 +83,7 @@ const WEIGHTED_BADGE_LEVELS: Record<string, BadgeLevel[]> = {
 
 const CATEGORIES = {
   'Force Fondamentale': ['Développé couché', 'Squat', 'Soulevé de terre'],
-  'Haltères & Press': ['Développé Haltères (Épaules)'],
+  'Haltères & Press': ['Développé Haltères'],
   'Poids du Corps & Calisthénie': ['Tractions', 'Dips'],
 };
 
@@ -97,9 +96,8 @@ const calculate1RM = (weight: number, reps: number) => {
   return weight * (1 + reps / 30);
 };
 
-export function Awards({ workouts, exercises, manualPRs, bodyMetrics = [], onUpdatePR, onToggleShare }: AwardsProps) {
+export function Awards({ workouts, exercises, manualPRs, bodyMetrics = [], onUpdatePR }: AwardsProps) {
   const [editingPR, setEditingPR] = useState<string | null>(null);
-  const [shareConfig, setShareConfig] = useState<{ id: string, name: string, isShared: boolean } | null>(null);
   const [formData, setFormData] = useState({ weight: '', reps: '1', bodyWeight: '', isWeighted: false });
 
   const latestWeight = useMemo(() => {
@@ -249,23 +247,12 @@ export function Awards({ workouts, exercises, manualPRs, bodyMetrics = [], onUpd
                         <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest italic">
                           {displayText}
                         </p>
-                        <div className="flex items-center gap-1">
-                          <button 
-                            onClick={() => handleEdit(exName)}
-                            className="p-1 hover:text-neon text-gray-600 transition-colors"
-                          >
-                            <Edit2 className="w-3 h-3" />
-                          </button>
-                          {pr && onToggleShare && (
-                            <button 
-                              onClick={() => setShareConfig({ id: pr.id, name: pr.exerciseName, isShared: !!pr.isShared })}
-                              className={`p-1 transition-colors ${pr.isShared ? 'text-neon' : 'text-gray-600 hover:text-neon'}`}
-                              title={pr.isShared ? 'Partagé' : 'Partager'}
-                            >
-                              <Share2 className="w-3 h-3" />
-                            </button>
-                          )}
-                        </div>
+                        <button 
+                          onClick={() => handleEdit(exName)}
+                          className="p-1 hover:text-neon text-gray-600 transition-colors"
+                        >
+                          <Edit2 className="w-3 h-3" />
+                        </button>
                       </div>
                     </div>
                     {highestAchieved ? (
@@ -335,52 +322,6 @@ export function Awards({ workouts, exercises, manualPRs, bodyMetrics = [], onUpd
           Pour les tractions et dips, tu peux choisir entre le nombre de répétitions au poids du corps ou ton poids lesté total estimé (Base 80kg + Lest).
         </p>
       </Card>
-
-      <Modal 
-        isOpen={!!shareConfig} 
-        onClose={() => setShareConfig(null)} 
-        title={shareConfig?.isShared ? "Retirer du flux" : "Partager mon Record"}
-      >
-        <div className="space-y-6">
-          <div className="flex flex-col items-center text-center gap-4 py-4">
-            <div className={`w-16 h-16 rounded-full flex items-center justify-center ${shareConfig?.isShared ? 'bg-red-500/10 text-red-500' : 'bg-neon/10 text-neon'}`}>
-              <Share2 className="w-8 h-8" />
-            </div>
-            <div>
-              <h3 className="text-xl text-white font-display uppercase tracking-tight">
-                {shareConfig?.isShared ? "Retirer le record ?" : "Partager ton trophée !"}
-              </h3>
-              <p className="text-sm text-gray-400 mt-1 max-w-xs">
-                {shareConfig?.isShared 
-                   ? `Ce record ne sera plus visible sur ton profil public.` 
-                   : `Le record de "${shareConfig?.name}" sera publié sur le flux communautaire.`}
-              </p>
-            </div>
-          </div>
-
-          <div className="flex flex-col gap-3">
-            <Button 
-              variant={shareConfig?.isShared ? 'danger' : 'neon'} 
-              className="w-full h-12 text-sm uppercase tracking-widest font-bold"
-              onClick={() => {
-                if (shareConfig && onToggleShare) {
-                  onToggleShare(shareConfig.id);
-                  setShareConfig(null);
-                }
-              }}
-            >
-              {shareConfig?.isShared ? "Retirer maintenant" : "Publier sur le flux"}
-            </Button>
-            <Button 
-              variant="secondary" 
-              className="w-full text-[10px] uppercase tracking-widest"
-              onClick={() => setShareConfig(null)}
-            >
-              Annuler
-            </Button>
-          </div>
-        </div>
-      </Modal>
 
       <Modal 
         isOpen={editingPR !== null} 

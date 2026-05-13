@@ -1,9 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { BodyMetric } from '../types';
 import { Card, Button, Input } from './UI';
-import { db } from '../lib/firebase';
-import { doc, getDoc } from 'firebase/firestore';
-import { handleFirestoreError, OperationType } from '../lib/firebaseUtils';
 import { 
   User, 
   Scale, 
@@ -33,40 +30,18 @@ export function Profile({
   userHeight,
   onUpdateHeight,
   onAddMetric, 
-  onDeleteMetric,
-  onUpdateProfile,
-  currentUser
+  onDeleteMetric 
 }: { 
   bodyMetrics: BodyMetric[];
   userHeight: number | null;
   onUpdateHeight: (height: number) => void;
   onAddMetric: (metric: BodyMetric) => void;
   onDeleteMetric: (id: string) => void;
-  onUpdateProfile: (data: { bio?: string }) => void;
-  currentUser: any;
 }) {
   const [weight, setWeight] = useState('');
   const [bodyFat, setBodyFat] = useState('');
   const [localHeight, setLocalHeight] = useState(userHeight?.toString() || '');
-  const [bio, setBio] = useState('');
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
-
-  React.useEffect(() => {
-    if (currentUser?.uid) {
-      const userPath = `users/${currentUser.uid}`;
-      const fetchBio = async () => {
-        try {
-          const docSnap = await getDoc(doc(db, 'users', currentUser.uid));
-          if (docSnap.exists()) {
-            setBio(docSnap.data().bio || '');
-          }
-        } catch (e) {
-          handleFirestoreError(e, OperationType.GET, userPath);
-        }
-      };
-      fetchBio();
-    }
-  }, [currentUser]);
 
   const sortedMetrics = useMemo(() => {
     return [...bodyMetrics].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
@@ -144,28 +119,6 @@ export function Profile({
               <p className="text-[9px] text-gray-600 uppercase tracking-wider italic">
                 Ta taille est enregistrée une fois pour calculer ton IMC.
               </p>
-            </div>
-          </Card>
-
-          {/* Bio Card */}
-          <Card className="p-6 bg-gradient-to-br from-dark-surface to-black/20">
-            <h2 className="text-xl text-white font-display uppercase tracking-tight flex items-center gap-2 mb-4">
-              <Activity className="w-5 h-5 text-neon" /> Bio & Slogan
-            </h2>
-            <div className="space-y-4">
-              <textarea 
-                value={bio}
-                onChange={(e) => setBio(e.target.value)}
-                className="w-full bg-black/30 border border-white/10 rounded-lg px-4 py-2 text-white placeholder:text-gray-600 focus:outline-none focus:border-neon/50 text-sm h-24 resize-none"
-                placeholder="Ta motivation en quelques mots..."
-              />
-              <Button 
-                variant="secondary" 
-                className="w-full"
-                onClick={() => onUpdateProfile({ bio })}
-              >
-                Mettre à jour ma bio
-              </Button>
             </div>
           </Card>
 
