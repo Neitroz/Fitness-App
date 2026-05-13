@@ -3,7 +3,8 @@ import { Exercise, WorkoutSession, BodyMetric, VolumeTargets, ManualPR } from '.
 import { demoExercises, demoWorkouts } from '../demoData';
 import { auth, db } from '../lib/firebase';
 import { onAuthStateChanged, User, updateProfile } from 'firebase/auth';
-import { doc, getDoc, setDoc, collection, query, where, getDocs, deleteDoc, addDoc, updateDoc } from 'firebase/firestore';
+import { doc, getDoc, setDoc, collection, query, where, getDocs, deleteDoc, addDoc, updateDoc, serverTimestamp } from 'firebase/firestore';
+import { handleFirestoreError, OperationType } from '../lib/firebaseUtils';
 
 export function useWorkoutStore() {
   const [exercises, setExercises] = useState<Exercise[]>([]);
@@ -31,6 +32,7 @@ export function useWorkoutStore() {
     const fetchData = async () => {
       if (!currentUser) return;
       
+      const userPath = `users/${currentUser.uid}`;
       try {
         const userDoc = await getDoc(doc(db, 'users', currentUser.uid));
         if (userDoc.exists()) {
@@ -38,6 +40,7 @@ export function useWorkoutStore() {
           if (data.height) setUserHeight(data.height);
           if (data.volumeTargets) setVolumeTargets(data.volumeTargets);
           if (data.unit) setUnit(data.unit);
+          if (data.bodyMetrics) setBodyMetrics(data.bodyMetrics);
         }
 
         const prsQuery = query(collection(db, 'manual_prs'), where('userId', '==', currentUser.uid));
@@ -50,14 +53,16 @@ export function useWorkoutStore() {
           setWorkouts(wSnap.docs.map(d => ({ id: d.id, ...d.data() } as WorkoutSession)));
         }
       } catch (e) {
-        console.error("Error fetching from Firestore:", e);
+        handleFirestoreError(e, OperationType.GET, userPath);
       }
     };
 
     if (currentUser) {
       fetchData();
       // Update last active
-      setDoc(doc(db, 'users', currentUser.uid), { lastActive: new Date().toISOString() }, { merge: true });
+      const userPath = `users/${currentUser.uid}`;
+      setDoc(doc(db, 'users', currentUser.uid), { lastActive: serverTimestamp() }, { merge: true })
+        .catch(e => handleFirestoreError(e, OperationType.WRITE, userPath));
     }
   }, [currentUser]);
 
@@ -214,6 +219,7 @@ export function useWorkoutStore() {
     });
 
     if (currentUser) {
+      const prPath = `manual_prs/${pr.exerciseName}`;
       try {
         const prsQuery = query(collection(db, 'manual_prs'), where('userId', '==', currentUser.uid), where('exerciseName', '==', pr.exerciseName));
         const prsSnap = await getDocs(prsQuery);
@@ -223,7 +229,7 @@ export function useWorkoutStore() {
           await addDoc(collection(db, 'manual_prs'), { ...pr, userId: currentUser.uid });
         }
       } catch (e) {
-        console.error("Error updating PR in Firestore:", e);
+        handleFirestoreError(e, OperationType.WRITE, prPath);
       }
     }
   };
@@ -291,6 +297,7 @@ export function useWorkoutStore() {
     isAuthLoading,
     updateProfile: async (data: { displayName?: string, photoURL?: string, bio?: string }) => {
       if (!currentUser) return;
+      const userPath = `users/${currentUser.uid}`;
       try {
         await updateProfile(currentUser, { 
           displayName: data.displayName || currentUser.displayName,
@@ -298,11 +305,11 @@ export function useWorkoutStore() {
         });
         await setDoc(doc(db, 'users', currentUser.uid), {
           ...data,
-          lastActive: new Date().toISOString()
+          lastActive: serverTimestamp()
         }, { merge: true });
         return true;
       } catch (e) {
-        console.error("Profile update error:", e);
+        handleFirestoreError(e, OperationType.WRITE, userPath);
         return false;
       }
     },
@@ -316,7 +323,7 @@ export function useWorkoutStore() {
         await updateDoc(doc(db, 'workouts', workoutId), { isShared: newStatus });
         setWorkouts(prev => prev.map(w => w.id === workoutId ? { ...w, isShared: newStatus } : w));
       } catch (e) {
-        console.error("Share toggle error:", e);
+        handleFirestoreError(e, OperationType.WRITE, `workouts/${workoutId}`);
       }
     },
     togglePRShare: async (prId: string) => {
@@ -329,11 +336,12 @@ export function useWorkoutStore() {
         await updateDoc(doc(db, 'manual_prs', prId), { isShared: newStatus });
         setManualPRs(prev => prev.map(p => p.id === prId ? { ...p, isShared: newStatus } : p));
       } catch (e) {
-        console.error("PR Share toggle error:", e);
+        handleFirestoreError(e, OperationType.WRITE, `manual_prs/${prId}`);
       }
     },
     syncDataToCloud: async () => {
       if (!currentUser) return;
+      const userPath = `users/${currentUser.uid}`;
       try {
         // Sync PRs
         for (const pr of manualPRs) {
@@ -349,12 +357,13 @@ export function useWorkoutStore() {
           height: userHeight,
           volumeTargets,
           unit,
-          lastActive: new Date().toISOString()
+          bodyMetrics,
+          lastActive: serverTimestamp()
         }, { merge: true });
         
         alert("Données locales synchronisées avec le cloud !");
       } catch (e) {
-        console.error("Cloud Sync Error:", e);
+        handleFirestoreError(e, OperationType.WRITE, userPath);
         alert("Erreur lors de la synchronisation.");
       }
     },

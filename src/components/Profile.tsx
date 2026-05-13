@@ -3,6 +3,7 @@ import { BodyMetric } from '../types';
 import { Card, Button, Input } from './UI';
 import { db } from '../lib/firebase';
 import { doc, getDoc } from 'firebase/firestore';
+import { handleFirestoreError, OperationType } from '../lib/firebaseUtils';
 import { 
   User, 
   Scale, 
@@ -52,10 +53,15 @@ export function Profile({
 
   React.useEffect(() => {
     if (currentUser?.uid) {
+      const userPath = `users/${currentUser.uid}`;
       const fetchBio = async () => {
-        const docSnap = await getDoc(doc(db, 'users', currentUser.uid));
-        if (docSnap.exists()) {
-          setBio(docSnap.data().bio || '');
+        try {
+          const docSnap = await getDoc(doc(db, 'users', currentUser.uid));
+          if (docSnap.exists()) {
+            setBio(docSnap.data().bio || '');
+          }
+        } catch (e) {
+          handleFirestoreError(e, OperationType.GET, userPath);
         }
       };
       fetchBio();

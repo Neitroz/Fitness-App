@@ -9,6 +9,7 @@ import {
   GoogleAuthProvider
 } from 'firebase/auth';
 import { doc, setDoc, serverTimestamp, getDoc } from 'firebase/firestore';
+import { handleFirestoreError, OperationType } from '../lib/firebaseUtils';
 import { Card, Input, Button, Badge } from './UI';
 import { LogIn, UserPlus, LogOut, User as UserIcon, ShieldCheck, Mail } from 'lucide-react';
 
@@ -55,12 +56,17 @@ export function Auth({ user }: { user: any }) {
         displayName: displayName || user.displayName,
         photoURL: photoURL || user.photoURL 
       });
-      await setDoc(doc(db, 'users', user.uid), {
-        displayName: displayName || user.displayName,
-        photoURL: photoURL || user.photoURL,
-        bio: bio,
-        lastActive: serverTimestamp()
-      }, { merge: true });
+      const userPath = `users/${user.uid}`;
+      try {
+        await setDoc(doc(db, 'users', user.uid), {
+          displayName: displayName || user.displayName,
+          photoURL: photoURL || user.photoURL,
+          bio: bio,
+          lastActive: serverTimestamp()
+        }, { merge: true });
+      } catch (err) {
+        handleFirestoreError(err, OperationType.WRITE, userPath);
+      }
       setIsEditing(false);
     } catch (err: any) {
       setError(err.message);
@@ -76,14 +82,19 @@ export function Auth({ user }: { user: any }) {
       const provider = new GoogleAuthProvider();
       const result = await signInWithPopup(auth, provider);
       
-      const userDoc = await getDoc(doc(db, 'users', result.user.uid));
-      if (!userDoc.exists()) {
-        await setDoc(doc(db, 'users', result.user.uid), {
-          displayName: result.user.displayName,
-          photoURL: result.user.photoURL,
-          createdAt: serverTimestamp(),
-          lastActive: serverTimestamp()
-        });
+      const userPath = `users/${result.user.uid}`;
+      try {
+        const userDoc = await getDoc(doc(db, 'users', result.user.uid));
+        if (!userDoc.exists()) {
+          await setDoc(doc(db, 'users', result.user.uid), {
+            displayName: result.user.displayName,
+            photoURL: result.user.photoURL,
+            createdAt: serverTimestamp(),
+            lastActive: serverTimestamp()
+          });
+        }
+      } catch (err) {
+        handleFirestoreError(err, OperationType.GET, userPath);
       }
     } catch (err: any) {
       setError(err.message);
@@ -104,11 +115,16 @@ export function Auth({ user }: { user: any }) {
         const userCredential = await createUserWithEmailAndPassword(auth, email, password);
         await updateProfile(userCredential.user, { displayName });
         
-        await setDoc(doc(db, 'users', userCredential.user.uid), {
-          displayName,
-          createdAt: serverTimestamp(),
-          lastActive: serverTimestamp()
-        });
+        const userPath = `users/${userCredential.user.uid}`;
+        try {
+          await setDoc(doc(db, 'users', userCredential.user.uid), {
+            displayName,
+            createdAt: serverTimestamp(),
+            lastActive: serverTimestamp()
+          });
+        } catch (err) {
+          handleFirestoreError(err, OperationType.WRITE, userPath);
+        }
       }
     } catch (err: any) {
       if (err.code === 'auth/operation-not-allowed') {
