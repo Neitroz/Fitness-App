@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
-import { Exercise, WorkoutSession, BodyMetric, VolumeTargets, ManualPR } from '../types';
+import { Exercise, WorkoutSession, BodyMetric, VolumeTargets, ManualPR, UserStats } from '../types';
 import { demoExercises, demoWorkouts } from '../demoData';
+import { calculateWorkoutXP, getLevelFromXP } from '../lib/xp';
 
 export function useWorkoutStore() {
   const [exercises, setExercises] = useState<Exercise[]>([]);
@@ -10,7 +11,14 @@ export function useWorkoutStore() {
   const [volumeTargets, setVolumeTargets] = useState<VolumeTargets>({});
   const [manualPRs, setManualPRs] = useState<ManualPR[]>([]);
   const [unit, setUnit] = useState<'kg' | 'lbs'>('kg');
+  const [userStats, setUserStats] = useState<UserStats>({
+    xp: 0,
+    level: 1,
+    streak: 0,
+    totalWorkouts: 0
+  });
   const [isLoaded, setIsLoaded] = useState(false);
+  const [xpNotification, setXpNotification] = useState<{ xp: number, levelUp: boolean } | null>(null);
 
   const migrateExercises = (rawExercises: any[]) => {
     return rawExercises.map((ex: any) => {
@@ -38,6 +46,7 @@ export function useWorkoutStore() {
     const storedVolumeTargets = localStorage.getItem('ironflow_volume_targets');
     const storedManualPRs = localStorage.getItem('ironflow_manual_prs');
     const storedUnit = localStorage.getItem('ironflow_unit');
+    const storedStats = localStorage.getItem('ironflow_stats');
 
     if (storedExercises) {
       setExercises(migrateExercises(JSON.parse(storedExercises)));
@@ -69,6 +78,10 @@ export function useWorkoutStore() {
 
     if (storedUnit) {
       setUnit(storedUnit as 'kg' | 'lbs');
+    }
+
+    if (storedStats) {
+      setUserStats(JSON.parse(storedStats));
     }
 
     setIsLoaded(true);
@@ -116,6 +129,12 @@ export function useWorkoutStore() {
     }
   }, [unit, isLoaded]);
 
+  useEffect(() => {
+    if (isLoaded) {
+      localStorage.setItem('ironflow_stats', JSON.stringify(userStats));
+    }
+  }, [userStats, isLoaded]);
+
   const addExercise = (exercise: Exercise) => {
     setExercises(prev => [...prev, exercise]);
   };
@@ -126,16 +145,46 @@ export function useWorkoutStore() {
 
   const deleteExercise = (id: string) => {
     setExercises(prev => prev.filter(e => e.id !== id));
-    // Also remove any related workout entries? Or keep them as orphans?
-    // User requirement doesn't specify, but usually better to keep history.
+  };
+
+  const awardXP = (session: WorkoutSession) => {
+    const { total } = calculateWorkoutXP(session, workouts);
+    setUserStats(prev => {
+      const newXP = prev.xp + total;
+      const newLevel = getLevelFromXP(newXP);
+      const levelUp = newLevel > prev.level;
+      
+      setXpNotification({ xp: total, levelUp });
+      
+      // Auto-hide notification
+      setTimeout(() => setXpNotification(null), 5000);
+
+      return {
+        ...prev,
+        xp: newXP,
+        level: newLevel,
+        totalWorkouts: prev.totalWorkouts + 1,
+        lastWorkoutDate: new Date().toISOString()
+      };
+    });
   };
 
   const addWorkout = (workout: WorkoutSession) => {
-    setWorkouts(prev => [workout, ...prev].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
+    let finalWorkout = workout;
+    if (workout.status === 'completed' && !workout.awardedXP) {
+      finalWorkout = { ...workout, awardedXP: true };
+      awardXP(finalWorkout);
+    }
+    setWorkouts(prev => [finalWorkout, ...prev].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
   };
 
   const updateWorkout = (workout: WorkoutSession) => {
-    setWorkouts(prev => prev.map(w => w.id === workout.id ? workout : w));
+    let finalWorkout = workout;
+    if (workout.status === 'completed' && !workout.awardedXP) {
+      finalWorkout = { ...workout, awardedXP: true };
+      awardXP(finalWorkout);
+    }
+    setWorkouts(prev => prev.map(w => w.id === finalWorkout.id ? finalWorkout : w));
   };
 
   const deleteWorkout = (id: string) => {
@@ -223,6 +272,8 @@ export function useWorkoutStore() {
     updateVolumeTarget,
     updateManualPR,
     manualPRs,
+    userStats,
+    xpNotification,
     resetData,
     exportData,
     importData,

@@ -1,16 +1,18 @@
 import React, { useMemo } from 'react';
-import { Exercise, WorkoutSession, BodyMetric, ManualPR } from '../types';
+import { Exercise, WorkoutSession, BodyMetric, ManualPR, UserStats } from '../types';
 import { Card, Button, Badge } from './UI';
-import { Activity, Dumbbell, Trophy, Plus, ChevronRight, Scale, TrendingUp, TrendingDown } from 'lucide-react';
+import { Activity, Dumbbell, Trophy, Plus, ChevronRight, Scale, TrendingUp, TrendingDown, Star, Zap } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 import { format, subDays, isWithinInterval, startOfDay } from 'date-fns';
 import { fr } from 'date-fns/locale';
+import { getXPProgress, getRank } from '../lib/xp';
 
 export function Dashboard({ 
   workouts, 
   exercises, 
   bodyMetrics,
   manualPRs,
+  userStats,
   onStartWorkout,
   onViewChange
 }: { 
@@ -18,9 +20,12 @@ export function Dashboard({
   exercises: Exercise[];
   bodyMetrics: BodyMetric[];
   manualPRs?: ManualPR[];
+  userStats?: UserStats;
   onStartWorkout: () => void;
   onViewChange?: (view: string) => void;
 }) {
+  const xpInfo = useMemo(() => getXPProgress(userStats?.xp || 0), [userStats?.xp]);
+  const rank = useMemo(() => getRank(userStats?.level || 1), [userStats?.level]);
   const last7Days = useMemo(() => {
     const now = new Date();
     const start = subDays(now, 7);
@@ -99,10 +104,38 @@ export function Dashboard({
           <h1 className="text-4xl text-white bebas tracking-wider">Tableau de Bord</h1>
           <p className="text-gray-400 text-sm">Tes progrès des 7 derniers jours.</p>
         </div>
-        <Button variant="neon" size="lg" className="gap-2" onClick={onStartWorkout}>
-          <Plus className="w-5 h-5" />
-          Nouvelle Séance
-        </Button>
+        <div className="flex flex-col sm:flex-row gap-4 items-center">
+          <Card className="flex items-center gap-4 px-4 py-3 bg-gradient-to-r from-neon/10 to-transparent border-neon/20 shadow-[0_0_20px_rgba(232,255,11,0.05)] w-full sm:w-64">
+            <div className="relative">
+              <div className="w-12 h-12 rounded-lg bg-neon flex items-center justify-center text-black font-display text-2xl italic tracking-tighter shadow-lg shadow-neon/20">
+                {userStats?.level}
+              </div>
+              <div className="absolute -top-1 -right-1 w-4 h-4 bg-sport-orange rounded-full flex items-center justify-center border-2 border-dark-bg">
+                <Zap className="w-2.5 h-2.5 text-white" />
+              </div>
+            </div>
+            <div className="flex-1 space-y-1.5">
+              <div className="flex justify-between items-end">
+                <span className="text-[10px] font-bold text-gray-500 uppercase tracking-widest leading-none">Niveau Athlète</span>
+                <span className="text-[10px] font-bold text-neon uppercase tracking-widest leading-none">{Math.round(xpInfo.percentage)}%</span>
+              </div>
+              <div className="h-1.5 w-full bg-white/5 rounded-full overflow-hidden">
+                <div 
+                  className="h-full bg-neon transition-all duration-1000 shadow-[0_0_10px_rgba(232,255,11,0.5)]" 
+                  style={{ width: `${xpInfo.percentage}%` }}
+                />
+              </div>
+              <p className="text-[8px] text-gray-600 font-bold uppercase tracking-tighter">
+                {xpInfo.xpToNext} XP avant le prochain palier
+              </p>
+            </div>
+          </Card>
+
+          <Button variant="neon" size="lg" className="gap-2 w-full sm:w-auto shadow-lg shadow-neon/10" onClick={onStartWorkout}>
+            <Plus className="w-5 h-5" />
+            Nouvelle Séance
+          </Button>
+        </div>
       </div>
 
       {/* Summary Stat Cards */}

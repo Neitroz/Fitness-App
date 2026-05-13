@@ -16,6 +16,7 @@ import { WorkoutLog } from './components/WorkoutLog';
 import { Analytics } from './components/Analytics';
 import { Awards } from './components/Awards';
 import { Profile } from './components/Profile';
+import { XpNotification } from './components/XpNotification';
 import { Button, Card, Modal, Input, Badge } from './components/UI';
 import { 
   LayoutDashboard, 
@@ -73,6 +74,7 @@ export default function App() {
             exercises={store.exercises} 
             bodyMetrics={store.bodyMetrics}
             manualPRs={store.manualPRs}
+            userStats={store.userStats}
             onStartWorkout={() => setCurrentView('workouts')}
             onViewChange={(view: any) => setCurrentView(view)}
           />
@@ -118,6 +120,7 @@ export default function App() {
             exercises={store.exercises}
             manualPRs={store.manualPRs}
             bodyMetrics={store.bodyMetrics}
+            userStats={store.userStats}
             onUpdatePR={store.updateManualPR}
           />
         );
@@ -276,6 +279,14 @@ export default function App() {
           {renderView()}
         </div>
       </main>
+
+      {store.xpNotification && (
+        <XpNotification 
+          xp={store.xpNotification.xp} 
+          levelUp={store.xpNotification.levelUp} 
+          level={store.userStats.level}
+        />
+      )}
 
       {/* Mobile Tab Bar (Fallback for accessibility) */}
       <div className="md:hidden fixed bottom-0 left-0 right-0 h-16 bg-dark-surface/80 backdrop-blur-md border-t border-white/5 flex items-center justify-around px-2 z-30">

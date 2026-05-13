@@ -37,6 +37,7 @@ export interface WorkoutSession {
   name: string;
   notes?: string;
   status?: 'draft' | 'completed';
+  awardedXP?: boolean;
   entries: WorkoutEntry[];
 }
 
@@ -55,6 +56,14 @@ export interface ManualPR {
   date: string;
   isWeighted?: boolean;
   bodyWeight?: number; // Weight of the user at the time of PR
+}
+
+export interface UserStats {
+  xp: number;
+  level: number;
+  streak: number;
+  lastWorkoutDate?: string;
+  totalWorkouts: number;
 }
 
 export type VolumeTargets = Record<string, number>;

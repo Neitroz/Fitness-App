@@ -1,14 +1,16 @@
 
 import React, { useMemo, useState } from 'react';
-import { Trophy, Medal, Award, Star, TrendingUp, Info, Plus, Edit2, Scale } from 'lucide-react';
+import { Trophy, Medal, Award, Star, TrendingUp, Info, Plus, Edit2, Scale, Zap, ShieldCheck, Activity } from 'lucide-react';
 import { Card, Badge, Modal, Input, Button } from './UI';
-import { WorkoutSession, Exercise, ManualPR } from '../types';
+import { WorkoutSession, Exercise, ManualPR, UserStats } from '../types';
+import { getXPProgress, getRank } from '../lib/xp';
 
 interface AwardsProps {
   workouts: WorkoutSession[];
   exercises: Exercise[];
   manualPRs: ManualPR[];
   bodyMetrics?: any[];
+  userStats?: UserStats;
   onUpdatePR: (pr: ManualPR) => void;
 }
 
@@ -96,9 +98,12 @@ const calculate1RM = (weight: number, reps: number) => {
   return weight * (1 + reps / 30);
 };
 
-export function Awards({ workouts, exercises, manualPRs, bodyMetrics = [], onUpdatePR }: AwardsProps) {
+export function Awards({ workouts, exercises, manualPRs, bodyMetrics = [], userStats, onUpdatePR }: AwardsProps) {
   const [editingPR, setEditingPR] = useState<string | null>(null);
   const [formData, setFormData] = useState({ weight: '', reps: '1', bodyWeight: '', isWeighted: false });
+
+  const xpInfo = useMemo(() => getXPProgress(userStats?.xp || 0), [userStats?.xp]);
+  const rank = useMemo(() => getRank(userStats?.level || 1), [userStats?.level]);
 
   const latestWeight = useMemo(() => {
     if (!bodyMetrics.length) return 80;
@@ -168,32 +173,90 @@ export function Awards({ workouts, exercises, manualPRs, bodyMetrics = [], onUpd
 
   return (
     <div className="space-y-12 animate-in fade-in slide-in-from-bottom-4 duration-700">
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
-        <div className="space-y-2">
-          <h1 className="text-4xl text-white bebas tracking-wider">Hauts Faits & Records</h1>
-          <p className="text-gray-500 uppercase font-bold tracking-[0.2em] text-[10px]">Tes accomplissements et trophées de force manuels</p>
-        </div>
-        
-        <div className="flex gap-4">
-          <Card className="px-4 py-2 bg-neon/10 border-neon/20 flex items-center gap-3">
-            <Trophy className="w-5 h-5 text-neon" />
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <Card className="lg:col-span-2 p-6 bg-gradient-to-br from-dark-surface to-black/60 relative overflow-hidden group border-neon/10">
+          <div className="absolute -right-10 -bottom-10 opacity-5 group-hover:opacity-10 transition-opacity">
+            <Trophy size={300} />
+          </div>
+          
+          <div className="flex flex-col md:flex-row gap-8 items-center relative z-10">
+            <div className="relative">
+              <div className="w-32 h-32 rounded-3xl bg-dark-bg border-2 border-white/5 flex items-center justify-center p-4">
+                <div 
+                  className="w-full h-full flex items-center justify-center animate-pulse"
+                  style={{ color: rank.color }}
+                >
+                  <ShieldCheck size={80} strokeWidth={1.5} />
+                </div>
+              </div>
+              <div className="absolute -bottom-3 left-1/2 -translate-x-1/2 bg-neon px-4 py-1 rounded-full shadow-xl shadow-neon/20">
+                <span className="text-black font-display text-sm italic uppercase tracking-widest leading-none">NIV. {userStats?.level}</span>
+              </div>
+            </div>
+
+            <div className="flex-1 space-y-4 w-full">
+              <div className="flex justify-between items-end">
+                <div className="space-y-1">
+                  <span className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Rang Actuel</span>
+                  <h3 className="text-3xl text-white bebas tracking-wider" style={{ color: rank.color }}>
+                    PROFIL {rank.label}
+                  </h3>
+                </div>
+                <div className="text-right">
+                  <span className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Score Total</span>
+                  <p className="text-xl text-white font-mono">{userStats?.xp.toLocaleString()} <span className="text-neon text-xs">XP</span></p>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <div className="flex justify-between text-[10px] font-bold uppercase tracking-widest">
+                  <span className="text-gray-500">Progression du palier</span>
+                  <span className="text-neon">{Math.round(xpInfo.percentage)}%</span>
+                </div>
+                <div className="h-3 w-full bg-black/40 rounded-full p-0.5 border border-white/5">
+                  <div 
+                    className="h-full bg-neon rounded-full transition-all duration-1000 shadow-[0_0_15px_rgba(232,255,11,0.3)]"
+                    style={{ width: `${xpInfo.percentage}%` }}
+                  />
+                </div>
+                <p className="text-[9px] text-gray-600 font-bold uppercase tracking-[0.2em] italic">
+                  Encore {xpInfo.xpToNext} XP pour atteindre le niveau {userStats!.level + 1}
+                </p>
+              </div>
+            </div>
+          </div>
+        </Card>
+
+        <div className="grid grid-cols-1 gap-4">
+          <Card className="px-6 py-4 bg-neon/10 border-neon/20 flex items-center gap-4">
+            <div className="w-10 h-10 bg-neon rounded-lg flex items-center justify-center shadow-lg shadow-neon/20">
+              <Activity className="w-6 h-6 text-black" />
+            </div>
             <div>
-              <p className="text-[8px] text-gray-500 font-bold uppercase tracking-tight">Total Trophées</p>
-              <p className="text-xl text-white font-mono leading-none">{stats.totalBadges}</p>
+              <p className="text-[10px] text-gray-500 font-bold uppercase tracking-[0.1em]">Séances Totales</p>
+              <p className="text-2xl text-white bebas tracking-wider leading-none">{userStats?.totalWorkouts}</p>
             </div>
           </Card>
-          <div className="hidden sm:flex gap-2">
-            {Object.entries(stats.badgeCounts).map(([label, count]) => {
-              if (count === 0) return null;
-              const lvl = Object.values(BADGE_LEVELS).flatMap(v => v).find(l => l.label === label);
-              return (
-                <div key={label} className="flex flex-col items-center">
-                  <div className="text-sm" style={{ color: lvl?.color }}>{lvl?.icon}</div>
-                  <span className="text-[10px] text-white font-mono">{count}</span>
-                </div>
-              );
-            })}
-          </div>
+          
+          <Card className="px-6 py-4 bg-sport-orange/10 border-sport-orange/20 flex items-center gap-4">
+            <div className="w-10 h-10 bg-sport-orange rounded-lg flex items-center justify-center shadow-lg shadow-sport-orange/20">
+              <Zap className="w-6 h-6 text-black" />
+            </div>
+            <div>
+              <p className="text-[10px] text-gray-500 font-bold uppercase tracking-[0.1em]">Série Actuelle</p>
+              <p className="text-2xl text-white bebas tracking-wider leading-none">{userStats?.streak} Jours</p>
+            </div>
+          </Card>
+
+          <Card className="px-6 py-4 bg-blue-500/10 border-blue-500/20 flex items-center gap-4">
+            <div className="w-10 h-10 bg-blue-500 rounded-lg flex items-center justify-center shadow-lg shadow-blue-500/20">
+              <Trophy className="w-6 h-6 text-black" />
+            </div>
+            <div>
+              <p className="text-[10px] text-gray-500 font-bold uppercase tracking-[0.1em]">Total Trophées</p>
+              <p className="text-2xl text-white bebas tracking-wider leading-none">{stats.totalBadges}</p>
+            </div>
+          </Card>
         </div>
       </div>
 
